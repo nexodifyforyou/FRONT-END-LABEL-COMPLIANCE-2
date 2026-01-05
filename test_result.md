@@ -116,6 +116,9 @@ frontend:
       - working: true
         agent: "main"
         comment: "Landing page fully implemented with EU 1169/2011 hero, feature cards, multi-food category section, Halal module callout, How It Works, FAQ, and final CTAs"
+      - working: true
+        agent: "testing"
+        comment: "✅ Landing page comprehensively tested. Dark theme (#070A12) verified, EU 1169/2011 + Optional Halal Preflight badge present, hero headline 'EU Label Compliance, Preflighted.' correct, both CTA buttons working, product proof montage with dashboard mock and 78% score, all 4 feature cards found (EU 1169/2011 Checks, Label ↔ TDS Cross-Check, Evidence + Sources, Print Verification Pack), multi-food category section with 12 category chips (Dairy, Meat & Fish, Confectionery, etc.), Halal Export-Readiness section, How it Works with 3 steps, FAQ section with 5 expandable questions, final CTA section. Mobile (390x844) and tablet (768x1024) responsiveness working. Minor: FAQ expansion needs improvement but core functionality works."
 
   - task: "Sample Report Interactive Page"
     implemented: true
