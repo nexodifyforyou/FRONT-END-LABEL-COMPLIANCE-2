@@ -1,0 +1,844 @@
+openapi: 3.1.0
+info:
+  title: Nexodify AVA Label Compliance API
+  description: API for label compliance preflight checking
+  version: 1.0.0
+  contact:
+    email: api@nexodify.com
+
+servers:
+  - url: https://api.nexodify.com
+    description: Production
+  - url: http://localhost:4100
+    description: Local development
+
+tags:
+  - name: Auth
+    description: Authentication endpoints
+  - name: User
+    description: User profile management
+  - name: Runs
+    description: Compliance audit runs
+  - name: Billing
+    description: Credits and subscriptions
+  - name: Admin
+    description: Administrative endpoints
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  service:
+                    type: string
+                  ts:
+                    type: integer
+
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Registration successful
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/auth/verify-email:
+    post:
+      tags: [Auth]
+      summary: Verify email with token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+      responses:
+        '200':
+          description: Email verified
+
+  /api/auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Request password reset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Reset email sent
+
+  /api/auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Reset password with token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                password:
+                  type: string
+                  minLength: 8
+      responses:
+        '200':
+          description: Password reset successful
+
+  /api/me:
+    get:
+      tags: [User]
+      summary: Get current user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    put:
+      tags: [User]
+      summary: Update user profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                company:
+                  type: string
+      responses:
+        '200':
+          description: Profile updated
+
+  /api/me/password:
+    put:
+      tags: [User]
+      summary: Change password
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                current_password:
+                  type: string
+                new_password:
+                  type: string
+                  minLength: 8
+      responses:
+        '200':
+          description: Password changed
+
+  /api/run:
+    post:
+      tags: [Runs]
+      summary: Create new audit run
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RunRequest'
+      responses:
+        '200':
+          description: Audit completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunResponse'
+        '402':
+          description: Insufficient credits
+
+  /api/runs:
+    get:
+      tags: [Runs]
+      summary: List audit runs
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pass, fail, warning]
+      responses:
+        '200':
+          description: List of runs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunListResponse'
+
+  /api/runs/{run_id}:
+    get:
+      tags: [Runs]
+      summary: Get run details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: run_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Run details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/runs/{run_id}/report.pdf:
+    get:
+      tags: [Runs]
+      summary: Download PDF report
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: run_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: PDF file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  /api/runs/{run_id}/report.json:
+    get:
+      tags: [Runs]
+      summary: Download JSON report
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: run_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: JSON report
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/runs/{run_id}/rerun:
+    post:
+      tags: [Runs]
+      summary: Re-run audit with corrections
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: run_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                correction_text:
+                  type: string
+      responses:
+        '200':
+          description: Rerun completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunResponse'
+
+  /api/save-corrections:
+    post:
+      tags: [Runs]
+      summary: Save correction text
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                run_id:
+                  type: string
+                correction_text:
+                  type: string
+      responses:
+        '200':
+          description: Correction saved
+
+  /api/billing/wallet:
+    get:
+      tags: [Billing]
+      summary: Get credit balance
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Wallet info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletResponse'
+
+  /api/billing/ledger:
+    get:
+      tags: [Billing]
+      summary: Get transaction history
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Transaction list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LedgerResponse'
+
+  /api/billing/plans:
+    get:
+      tags: [Billing]
+      summary: Get subscription plans
+      responses:
+        '200':
+          description: Plans list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  plans:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Plan'
+
+  /api/billing/checkout:
+    post:
+      tags: [Billing]
+      summary: Create Stripe checkout session
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                price_id:
+                  type: string
+      responses:
+        '200':
+          description: Checkout URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+
+  /api/billing/portal:
+    post:
+      tags: [Billing]
+      summary: Create Stripe portal session
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Portal URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+
+  /api/billing/topup:
+    post:
+      tags: [Billing]
+      summary: Create top-up checkout
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: integer
+      responses:
+        '200':
+          description: Checkout URL
+
+  /api/stripe/webhook:
+    post:
+      tags: [Billing]
+      summary: Stripe webhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Webhook processed
+
+  /api/admin/stats:
+    get:
+      tags: [Admin]
+      summary: Get system stats
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: System statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminStats'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/admin/users:
+    get:
+      tags: [Admin]
+      summary: List all users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Users list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUsersResponse'
+
+  /api/admin/grant-credits:
+    post:
+      tags: [Admin]
+      summary: Grant credits to user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: string
+                credits:
+                  type: number
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Credits granted
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+          minLength: 2
+        email:
+          type: string
+          format: email
+        company:
+          type: string
+        password:
+          type: string
+          minLength: 8
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+        credits:
+          type: number
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        company:
+          type: string
+        role:
+          type: string
+          enum: [user, admin]
+        email_verified:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    MeResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        credits:
+          type: number
+
+    RunRequest:
+      type: object
+      required: [product_name, company_name, country_of_sale, label_file, tds_file]
+      properties:
+        product_name:
+          type: string
+        company_name:
+          type: string
+        country_of_sale:
+          type: string
+        languages_provided:
+          type: array
+          items:
+            type: string
+        halal_audit:
+          type: boolean
+        attach_pdf:
+          type: boolean
+        customer_name:
+          type: string
+        customer_email:
+          type: string
+        label_file:
+          type: string
+          format: binary
+        tds_file:
+          type: string
+          format: binary
+
+    RunResponse:
+      type: object
+      properties:
+        run_id:
+          type: string
+        product_name:
+          type: string
+        company_name:
+          type: string
+        country_of_sale:
+          type: string
+        languages_provided:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+        score:
+          type: number
+        created_at:
+          type: string
+          format: date-time
+        credits_used:
+          type: number
+        report:
+          $ref: '#/components/schemas/Report'
+        pdf_url:
+          type: string
+        json_url:
+          type: string
+
+    Report:
+      type: object
+      properties:
+        summary:
+          type: string
+        checks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Check'
+
+    Check:
+      type: object
+      properties:
+        title:
+          type: string
+        status:
+          type: string
+          enum: [Pass, Fail, Warning]
+        severity:
+          type: string
+          enum: [critical, high, medium, low, info]
+        detail:
+          type: string
+        fix:
+          type: string
+        sources:
+          type: array
+          items:
+            type: string
+
+    RunListResponse:
+      type: object
+      properties:
+        runs:
+          type: array
+          items:
+            $ref: '#/components/schemas/RunResponse'
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        passed:
+          type: integer
+        failed:
+          type: integer
+
+    WalletResponse:
+      type: object
+      properties:
+        balance:
+          type: number
+        plan:
+          type: string
+        plan_credits:
+          type: integer
+        plan_renews_at:
+          type: string
+          format: date-time
+
+    LedgerResponse:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [grant, spend, topup, refund]
+        credits_delta:
+          type: number
+        reason:
+          type: string
+        run_id:
+          type: string
+        ts:
+          type: string
+          format: date-time
+
+    Plan:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        price:
+          type: integer
+        credits:
+          type: integer
+        stripe_price_id:
+          type: string
+
+    AdminStats:
+      type: object
+      properties:
+        totalUsers:
+          type: integer
+        totalRuns:
+          type: integer
+        totalCredits:
+          type: number
+
+    AdminUsersResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        total:
+          type: integer
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
