@@ -1,361 +1,319 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { billingAPI } from '../lib/api';
-import { DashboardLayout } from '../components/layout/DashboardLayout';
 import { Button } from '../components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { cn, formatCredits, formatDate } from '../lib/utils';
-import { motion } from 'framer-motion';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
 import {
+  ShieldCheck,
+  ArrowLeft,
   Coins,
-  Check,
-  Loader2,
-  CreditCard,
-  Zap,
-  Building2,
-  Users,
-  ExternalLink,
+  Plus,
+  History,
+  ArrowUp,
+  ArrowDown,
   AlertCircle,
+  CheckCircle,
 } from 'lucide-react';
-import { toast } from 'sonner';
-
-const PLANS = [
-  {
-    id: 'starter',
-    name: 'Starter',
-    price: 29,
-    credits: 10,
-    description: 'Perfect for small producers',
-    features: ['10 credits/month', 'Basic compliance checks', 'PDF reports', 'Email support'],
-    icon: Zap,
-  },
-  {
-    id: 'growth',
-    name: 'Growth',
-    price: 79,
-    credits: 30,
-    description: 'For growing businesses',
-    features: ['30 credits/month', 'All compliance checks', 'PDF reports', 'Priority support', 'Run history'],
-    icon: Coins,
-    popular: true,
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    price: 199,
-    credits: 100,
-    description: 'For compliance teams',
-    features: ['100 credits/month', 'All features', 'Team seats (up to 5)', 'API access', 'Dedicated support'],
-    icon: Users,
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    price: null,
-    credits: 'Custom',
-    description: 'For large organizations',
-    features: ['Unlimited credits', 'Custom integrations', 'SLA guarantee', 'Dedicated storage', 'Audit logs export'],
-    icon: Building2,
-  },
-];
-
-const TOPUP_PACKS = [
-  { credits: 5, price: 15 },
-  { credits: 15, price: 40 },
-  { credits: 50, price: 120 },
-];
 
 export default function BillingPage() {
-  const { credits, refreshCredits } = useAuth();
-  const [currentPlan, setCurrentPlan] = useState(null);
-  const [ledger, setLedger] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [checkoutLoading, setCheckoutLoading] = useState(null);
-  const [billingConfigured, setBillingConfigured] = useState(true);
+  const navigate = useNavigate();
+  const { wallet, isAdmin, creditsDisplay, addCredits, refreshWallet } = useAuth();
+  const [topUpAmount, setTopUpAmount] = useState('20');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchBillingData = async () => {
-      try {
-        const [walletRes, ledgerRes] = await Promise.all([
-          billingAPI.getWallet(),
-          billingAPI.getLedger({ limit: 10 }),
-        ]);
-        setCurrentPlan(walletRes.data.plan);
-        setLedger(ledgerRes.data.transactions || []);
-      } catch (err) {
-        console.error('Failed to fetch billing data:', err);
-        if (err.response?.status === 503 || err.response?.data?.error?.includes('not configured')) {
-          setBillingConfigured(false);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchBillingData();
-  }, []);
+  // Calculate credits from EUR amount (€20 = 10 credits, linear)
+  const euroAmount = parseFloat(topUpAmount) || 0;
+  const creditsToAdd = Math.floor(euroAmount / 2); // €2 = 1 credit
 
-  const handleSubscribe = async (planId) => {
-    if (!billingConfigured) {
-      toast.error('Billing is not configured yet');
+  // Validate minimum
+  const isValidAmount = euroAmount >= 20;
+
+  const handleTopUp = async () => {
+    if (!isValidAmount) {
+      setError('Minimum top-up amount is €20');
       return;
     }
-    setCheckoutLoading(planId);
+
+    setIsProcessing(true);
+    setError(null);
+
     try {
-      const { data } = await billingAPI.createCheckoutSession(planId);
-      if (data.url) {
-        window.location.href = data.url;
-      }
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Add credits
+      addCredits(creditsToAdd, euroAmount);
+      
+      // Show success
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        refreshWallet();
+      }, 2000);
+      
+      // Reset form
+      setTopUpAmount('20');
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to start checkout');
+      setError('Failed to process payment. Please try again.');
     } finally {
-      setCheckoutLoading(null);
+      setIsProcessing(false);
     }
   };
 
-  const handleTopUp = async (credits) => {
-    if (!billingConfigured) {
-      toast.error('Billing is not configured yet');
-      return;
-    }
-    setCheckoutLoading(`topup-${credits}`);
-    try {
-      const { data } = await billingAPI.topUp(credits);
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to process top-up');
-    } finally {
-      setCheckoutLoading(null);
-    }
-  };
-
-  const handleManageSubscription = async () => {
-    try {
-      const { data } = await billingAPI.createPortalSession();
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to open billing portal');
-    }
-  };
-
-  const getTransactionIcon = (type) => {
-    switch (type) {
-      case 'grant':
-      case 'topup':
-        return <span className="text-emerald-500">+</span>;
-      case 'spend':
-        return <span className="text-rose-500">-</span>;
-      case 'refund':
-        return <span className="text-blue-500">↺</span>;
-      default:
-        return null;
-    }
-  };
-
-  if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-        </div>
-      </DashboardLayout>
-    );
-  }
+  // Get ledger entries (newest first)
+  const ledgerEntries = [...(wallet?.ledger || [])].reverse();
 
   return (
-    <DashboardLayout>
-      <div className="space-y-8" data-testid="billing-page">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900 font-heading tracking-tight">
-            Billing & Credits
-          </h1>
-          <p className="text-slate-600 mt-1">Manage your subscription and credits</p>
-        </div>
-
-        {!billingConfigured && (
-          <div className="p-4 bg-amber-50 border border-amber-200 rounded-sm flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0" />
-            <div>
-              <div className="font-medium text-amber-800">Billing Not Configured</div>
-              <div className="text-sm text-amber-700">
-                Stripe billing is not yet configured. Contact admin to manually grant credits for testing.
-              </div>
+    <div className="min-h-screen bg-[#070A12] text-white">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-[#070A12]/80 backdrop-blur-xl border-b border-white/[0.06]">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-4">
+              <Link to="/dashboard" className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
+                <ArrowLeft className="h-4 w-4" />
+                <span className="text-sm hidden sm:inline">Dashboard</span>
+              </Link>
+              <Link to="/" className="flex items-center gap-2.5">
+                <ShieldCheck className="h-6 w-6 text-[#5B6CFF]" />
+                <span className="text-lg font-semibold text-white/95">Nexodify</span>
+              </Link>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.04] border border-white/[0.08] rounded-full">
+              <Coins className="h-4 w-4 text-amber-400" />
+              <span className="text-sm font-medium text-white/90">
+                {isAdmin ? <span className="text-emerald-400">Unlimited</span> : creditsDisplay}
+              </span>
             </div>
           </div>
-        )}
+        </div>
+      </header>
 
-        {/* Credit Balance */}
-        <Card className="border-slate-200 bg-gradient-to-br from-indigo-50 to-white">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+      {/* Main Content */}
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-white/95">Credits & Billing</h1>
+          <p className="text-white/50 mt-1">Manage your credits and view transaction history</p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Current Credits Card */}
+          <div className="bg-gradient-to-br from-[#5B6CFF]/10 to-transparent border border-[#5B6CFF]/20 rounded-2xl p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-[#5B6CFF]/20 flex items-center justify-center">
+                <Coins className="h-6 w-6 text-[#5B6CFF]" />
+              </div>
               <div>
-                <div className="text-sm text-slate-600 uppercase tracking-wider">Current Balance</div>
-                <div className="text-4xl font-bold text-slate-900 font-heading mt-1">
-                  {formatCredits(credits)} <span className="text-lg font-normal text-slate-500">credits</span>
+                <div className="text-sm text-white/50">Current Balance</div>
+                <div className="text-3xl font-bold">
+                  {isAdmin ? (
+                    <span className="text-emerald-400">Unlimited</span>
+                  ) : (
+                    <span className="text-white/95">{wallet?.credits_available || 0}</span>
+                  )}
                 </div>
-                {currentPlan && (
-                  <div className="text-sm text-slate-600 mt-2">
-                    Current plan: <span className="font-medium">{currentPlan}</span>
+              </div>
+            </div>
+
+            {!isAdmin && (
+              <>
+                <div className="mb-4">
+                  <div className="flex justify-between text-sm text-white/50 mb-1">
+                    <span>Plan: {wallet?.plan?.charAt(0).toUpperCase() + wallet?.plan?.slice(1) || 'Starter'}</span>
+                    <span>{wallet?.credits_available || 0} / {wallet?.monthly_credits || 10}</span>
+                  </div>
+                  <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-[#5B6CFF] to-[#7B8CFF] rounded-full transition-all"
+                      style={{ width: `${Math.min(100, ((wallet?.credits_available || 0) / (wallet?.monthly_credits || 10)) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="text-xs text-white/40">
+                  Renews: {wallet?.renewal_date || 'N/A'}
+                </div>
+              </>
+            )}
+
+            {isAdmin && (
+              <div className="text-sm text-emerald-400/70">
+                Admin accounts have unlimited credits
+              </div>
+            )}
+          </div>
+
+          {/* Top Up Card */}
+          {!isAdmin && (
+            <div className="bg-white/[0.02] border border-white/[0.08] rounded-2xl p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-white/[0.06] flex items-center justify-center">
+                  <Plus className="h-6 w-6 text-white/70" />
+                </div>
+                <div>
+                  <div className="text-lg font-semibold text-white/95">Top Up Credits</div>
+                  <div className="text-sm text-white/50">Minimum €20</div>
+                </div>
+              </div>
+
+              {/* Success Message */}
+              {showSuccess && (
+                <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-400" />
+                  <span className="text-emerald-400 text-sm">Credits added successfully!</span>
+                </div>
+              )}
+
+              {/* Error Message */}
+              {error && (
+                <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-rose-400" />
+                  <span className="text-rose-400 text-sm">{error}</span>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-white/70">Amount (EUR)</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">€</span>
+                    <Input
+                      type="number"
+                      value={topUpAmount}
+                      onChange={(e) => setTopUpAmount(e.target.value)}
+                      min="20"
+                      step="5"
+                      className="pl-8 bg-white/[0.04] border-white/[0.12] text-white focus:border-[#5B6CFF]"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-4 bg-white/[0.02] border border-white/[0.06] rounded-xl">
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/50">Credits to receive</span>
+                    <span className="text-2xl font-bold text-[#5B6CFF]">{creditsToAdd}</span>
+                  </div>
+                  <div className="text-xs text-white/30 mt-1">€2 per credit</div>
+                </div>
+
+                {!isValidAmount && topUpAmount && (
+                  <div className="text-xs text-amber-400 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Minimum amount is €20
                   </div>
                 )}
-              </div>
-              {currentPlan && billingConfigured && (
-                <Button variant="outline" onClick={handleManageSubscription}>
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  Manage Subscription
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Plans */}
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900 font-heading mb-4">Subscription Plans</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {PLANS.map((plan, index) => (
-              <motion.div
-                key={plan.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card className={cn(
-                  'border-slate-200 h-full relative',
-                  plan.popular && 'border-indigo-500 border-2'
-                )}>
-                  {plan.popular && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-indigo-500 text-white text-xs font-medium rounded-full">
-                      Most Popular
-                    </div>
+                <Button
+                  onClick={handleTopUp}
+                  disabled={!isValidAmount || isProcessing}
+                  className="w-full bg-[#5B6CFF] hover:bg-[#4A5BEE] text-white h-11 rounded-xl"
+                >
+                  {isProcessing ? (
+                    'Processing...'
+                  ) : (
+                    <>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Credits
+                    </>
                   )}
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center gap-2">
-                      <plan.icon className="h-5 w-5 text-indigo-500" />
-                      <CardTitle className="font-heading text-lg">{plan.name}</CardTitle>
-                    </div>
-                    <CardDescription>{plan.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      {plan.price !== null ? (
-                        <>
-                          <span className="text-3xl font-bold text-slate-900 font-heading">${plan.price}</span>
-                          <span className="text-slate-500">/month</span>
-                        </>
-                      ) : (
-                        <span className="text-xl font-semibold text-slate-900 font-heading">Contact us</span>
-                      )}
-                    </div>
-                    <ul className="space-y-2">
-                      {plan.features.map((feature, i) => (
-                        <li key={i} className="flex items-center gap-2 text-sm text-slate-600">
-                          <Check className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                    <Button
-                      className={cn(
-                        'w-full',
-                        plan.popular ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-slate-900 hover:bg-slate-800'
-                      )}
-                      disabled={checkoutLoading === plan.id || !billingConfigured}
-                      onClick={() => plan.price !== null ? handleSubscribe(plan.id) : window.location.href = 'mailto:sales@nexodify.com'}
-                      data-testid={`subscribe-${plan.id}-btn`}
-                    >
-                      {checkoutLoading === plan.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : plan.price !== null ? (
-                        currentPlan === plan.id ? 'Current Plan' : 'Subscribe'
-                      ) : (
-                        'Contact Sales'
-                      )}
-                    </Button>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Admin View - Plan Info */}
+          {isAdmin && (
+            <div className="bg-white/[0.02] border border-white/[0.08] rounded-2xl p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                  <CheckCircle className="h-6 w-6 text-emerald-400" />
+                </div>
+                <div>
+                  <div className="text-lg font-semibold text-white/95">Admin Account</div>
+                  <div className="text-sm text-emerald-400">Unlimited access enabled</div>
+                </div>
+              </div>
+              <p className="text-white/50 text-sm">
+                Your account has been granted unlimited credits. All preflight runs are free.
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* Top-up Packs */}
-        <Card className="border-slate-200">
-          <CardHeader>
-            <CardTitle className="font-heading">Credit Top-ups</CardTitle>
-            <CardDescription>Need more credits? Purchase a one-time pack.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {TOPUP_PACKS.map((pack) => (
-                <div
-                  key={pack.credits}
-                  className="border border-slate-200 rounded-sm p-4 text-center hover:border-indigo-300 transition-colors"
-                >
-                  <div className="text-2xl font-bold text-slate-900 font-heading">{pack.credits}</div>
-                  <div className="text-sm text-slate-500 mb-3">credits</div>
-                  <div className="text-lg font-semibold text-slate-900">${pack.price}</div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-3 w-full"
-                    disabled={checkoutLoading === `topup-${pack.credits}` || !billingConfigured}
-                    onClick={() => handleTopUp(pack.credits)}
-                    data-testid={`topup-${pack.credits}-btn`}
-                  >
-                    {checkoutLoading === `topup-${pack.credits}` ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      'Buy Now'
-                    )}
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Transaction History */}
-        <Card className="border-slate-200">
-          <CardHeader>
-            <CardTitle className="font-heading">Transaction History</CardTitle>
-            <CardDescription>Recent credit transactions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {ledger.length === 0 ? (
-              <div className="text-center py-8 text-slate-500">
-                No transactions yet
-              </div>
-            ) : (
-              <div className="divide-y divide-slate-100">
-                {ledger.map((tx, index) => (
-                  <div key={index} className="flex items-center justify-between py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-lg font-bold">
-                        {getTransactionIcon(tx.type)}
+        <div className="mt-8">
+          <div className="flex items-center gap-3 mb-4">
+            <History className="h-5 w-5 text-white/50" />
+            <h2 className="text-lg font-semibold text-white/95">Transaction History</h2>
+          </div>
+
+          {ledgerEntries.length === 0 ? (
+            <div className="bg-white/[0.02] border border-white/[0.08] rounded-2xl p-8 text-center">
+              <History className="h-8 w-8 text-white/20 mx-auto mb-2" />
+              <p className="text-white/40 text-sm">No transactions yet</p>
+            </div>
+          ) : (
+            <div className="bg-white/[0.02] border border-white/[0.08] rounded-2xl overflow-hidden">
+              <div className="divide-y divide-white/[0.04]">
+                {ledgerEntries.map((entry, i) => (
+                  <div key={i} className="px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        entry.type === 'topup' || entry.type === 'grant'
+                          ? 'bg-emerald-500/10'
+                          : 'bg-rose-500/10'
+                      }`}>
+                        {entry.type === 'topup' || entry.type === 'grant' ? (
+                          <ArrowDown className="h-4 w-4 text-emerald-400" />
+                        ) : (
+                          <ArrowUp className="h-4 w-4 text-rose-400" />
+                        )}
                       </div>
                       <div>
-                        <div className="font-medium text-slate-900">{tx.reason || tx.type}</div>
-                        <div className="text-sm text-slate-500">{formatDate(tx.ts || tx.created_at)}</div>
+                        <div className="text-sm text-white/90">{entry.reason}</div>
+                        <div className="text-xs text-white/40">
+                          {new Date(entry.ts).toLocaleString()}
+                        </div>
                       </div>
                     </div>
-                    <div className={cn(
-                      'font-semibold',
-                      tx.credits_delta > 0 ? 'text-emerald-600' : 'text-rose-600'
-                    )}>
-                      {tx.credits_delta > 0 ? '+' : ''}{tx.credits_delta}
+                    <div className={`font-medium ${
+                      entry.delta > 0 ? 'text-emerald-400' : 'text-rose-400'
+                    }`}>
+                      {entry.delta > 0 ? '+' : ''}{entry.delta}
                     </div>
                   </div>
                 ))}
               </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </DashboardLayout>
+            </div>
+          )}
+        </div>
+
+        {/* Pricing Info */}
+        {!isAdmin && (
+          <div className="mt-8 p-6 bg-white/[0.02] border border-white/[0.08] rounded-2xl">
+            <h3 className="text-lg font-semibold text-white/95 mb-4">Credit Usage</h3>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="p-4 bg-white/[0.02] border border-white/[0.06] rounded-xl">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-white/70">EU 1169/2011 Preflight</span>
+                  <span className="text-[#5B6CFF] font-medium">1 credit</span>
+                </div>
+                <p className="text-xs text-white/40">Core compliance checks for EU labeling</p>
+              </div>
+              <div className="p-4 bg-white/[0.02] border border-white/[0.06] rounded-xl">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-white/70">+ Halal Module</span>
+                  <span className="text-emerald-400 font-medium">+1 credit</span>
+                </div>
+                <p className="text-xs text-white/40">Additional Halal export-readiness checks</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
   );
 }
