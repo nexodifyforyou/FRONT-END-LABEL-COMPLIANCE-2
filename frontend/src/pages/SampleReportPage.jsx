@@ -648,8 +648,16 @@ export default function SampleReportPage() {
 
       {/* Footer */}
       <footer className="py-8 px-4 border-t border-white/[0.06]">
-        <div className="max-w-7xl mx-auto flex items-center justify-center">
-          <span className="text-white/40 text-sm">© 2025 Nexodify. All rights reserved.</span>
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-white/40" />
+            <span className="text-white/40 text-sm">© 2025 Nexodify. All rights reserved.</span>
+          </div>
+          <div className="flex items-center gap-6 text-sm">
+            <Link to="/privacy" className="text-white/40 hover:text-white/70 transition-colors">Privacy</Link>
+            <Link to="/terms" className="text-white/40 hover:text-white/70 transition-colors">Terms</Link>
+            <a href="mailto:nexodifyforyou@gmail.com?subject=Nexodify%20AVA%20Support&body=Hi%20Nexodify%20Team%2C%0A%0A%5BDescribe%20your%20issue%5D%0A%0AThanks%2C" className="text-white/40 hover:text-white/70 transition-colors">Support</a>
+          </div>
         </div>
       </footer>
     </div>
