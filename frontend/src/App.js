@@ -12,6 +12,8 @@ import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
 import SampleReportPage from "./pages/SampleReportPage";
+import PrivacyPage from "./pages/PrivacyPage";
+import TermsPage from "./pages/TermsPage";
 import DashboardPage from "./pages/DashboardPage";
 import NewAuditPage from "./pages/audit/NewAuditPage";
 import RunHistoryPage from "./pages/runs/RunHistoryPage";
