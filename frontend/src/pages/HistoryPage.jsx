@@ -343,6 +343,14 @@ export default function HistoryPage() {
                         <Download className="h-4 w-4 mr-2" />
                         PDF
                       </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDeleteConfirm(run)}
+                        className="border-rose-500/30 text-rose-400 hover:bg-rose-500/10"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 </div>
