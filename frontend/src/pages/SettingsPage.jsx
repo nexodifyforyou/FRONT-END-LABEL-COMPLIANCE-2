@@ -2,16 +2,16 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth } from '../../context/AuthContext';
-import { DashboardLayout } from '../../components/layout/DashboardLayout';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Separator } from '../../components/ui/separator';
+import { useAuth } from '../context/AuthContext';
+import { DashboardLayout } from '../components/layout/DashboardLayout';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Separator } from '../components/ui/separator';
 import { User, Mail, Building2, Key, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
-import api from '../../lib/api';
+import api from '../lib/api';
 
 const profileSchema = z.object({
   name: z.string().min(2, 'Name is required'),
