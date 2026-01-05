@@ -6,7 +6,6 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Textarea } from '../../components/ui/textarea';
 import {
   Table,
   TableBody,
@@ -71,7 +70,6 @@ export default function AdminPage() {
       await adminAPI.grantCredits(grantForm.userId, parseFloat(grantForm.credits), grantForm.reason);
       toast.success(`Granted ${grantForm.credits} credits`);
       setGrantForm({ userId: '', credits: '', reason: '' });
-      // Refresh users
       const { data } = await adminAPI.getUsers({ limit: 20 });
       setUsers(data.users || []);
     } catch (err) {
@@ -94,7 +92,6 @@ export default function AdminPage() {
   return (
     <DashboardLayout>
       <div className="space-y-8" data-testid="admin-page">
-        {/* Header */}
         <div className="flex items-center gap-3">
           <div className="p-2 bg-indigo-100 rounded-sm">
             <Shield className="h-6 w-6 text-indigo-600" />
@@ -107,7 +104,6 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card className="border-slate-200">
             <CardContent className="p-6">
@@ -158,7 +154,6 @@ export default function AdminPage() {
           </Card>
         </div>
 
-        {/* Grant Credits */}
         <Card className="border-slate-200">
           <CardHeader>
             <CardTitle className="font-heading">Grant Credits</CardTitle>
@@ -190,7 +185,7 @@ export default function AdminPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="reason">Reason (optional)</Label>
+                  <Label htmlFor="reason">Reason</Label>
                   <Input
                     id="reason"
                     placeholder="Testing grant"
@@ -217,11 +212,9 @@ export default function AdminPage() {
           </CardContent>
         </Card>
 
-        {/* Users Table */}
         <Card className="border-slate-200">
           <CardHeader>
             <CardTitle className="font-heading">Users</CardTitle>
-            <CardDescription>All registered users</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             <Table>
@@ -229,31 +222,25 @@ export default function AdminPage() {
                 <TableRow className="bg-slate-50">
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Company</TableHead>
                   <TableHead>Credits</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Joined</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id || user.email}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.company || '-'}</TableCell>
-                    <TableCell>{formatCredits(user.credits || 0)}</TableCell>
+                {users.map((u) => (
+                  <TableRow key={u.id || u.email}>
+                    <TableCell className="font-medium">{u.name}</TableCell>
+                    <TableCell>{u.email}</TableCell>
+                    <TableCell>{formatCredits(u.credits || 0)}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        user.role === 'admin' 
-                          ? 'bg-indigo-100 text-indigo-700' 
-                          : 'bg-slate-100 text-slate-700'
+                        u.role === 'admin' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-700'
                       }`}>
-                        {user.role || 'user'}
+                        {u.role || 'user'}
                       </span>
                     </TableCell>
-                    <TableCell className="text-slate-600">
-                      {formatDate(user.created_at)}
-                    </TableCell>
+                    <TableCell className="text-slate-600">{formatDate(u.created_at)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
