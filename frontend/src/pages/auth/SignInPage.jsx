@@ -112,7 +112,7 @@ export default function SignInPage() {
               
               <button
                 onClick={() => {
-                  // Simulate admin login
+                  // Simulate admin login using devLogin from AuthContext
                   const adminAuth = {
                     provider: 'google',
                     email: 'nexodifyforyou@gmail.com',
@@ -120,7 +120,7 @@ export default function SignInPage() {
                     picture: '',
                     iat: new Date().toISOString()
                   };
-                  localStorage.setItem('ava_auth', JSON.stringify(adminAuth));
+                  devLogin(adminAuth);
                   navigate('/dashboard');
                 }}
                 className="w-full py-3 px-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl hover:bg-emerald-500/20 transition-colors text-sm font-medium"
@@ -130,7 +130,7 @@ export default function SignInPage() {
               
               <button
                 onClick={() => {
-                  // Simulate regular user login
+                  // Simulate regular user login using devLogin from AuthContext
                   const userAuth = {
                     provider: 'google',
                     email: 'demo@example.com',
@@ -138,8 +138,6 @@ export default function SignInPage() {
                     picture: '',
                     iat: new Date().toISOString()
                   };
-                  localStorage.setItem('ava_auth', JSON.stringify(userAuth));
-                  // Create starter wallet
                   const wallet = {
                     plan: 'starter',
                     monthly_credits: 10,
@@ -147,7 +145,7 @@ export default function SignInPage() {
                     renewal_date: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString().split('T')[0],
                     ledger: []
                   };
-                  localStorage.setItem('ava_wallet', JSON.stringify(wallet));
+                  devLogin(userAuth, wallet);
                   navigate('/dashboard');
                 }}
                 className="w-full py-3 px-4 bg-white/[0.04] border border-white/[0.12] text-white/70 rounded-xl hover:bg-white/[0.08] transition-colors text-sm font-medium"
