@@ -99,14 +99,61 @@ export default function SignInPage() {
               <div id="google-signin-btn"></div>
             </div>
 
-            {/* Divider */}
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/[0.08]"></div>
+            {/* Dev Login for Testing */}
+            <div className="space-y-3">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/[0.08]"></div>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="px-2 bg-[#0a0d14] text-white/40">Or for testing</span>
+                </div>
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="px-2 bg-[#0a0d14] text-white/40">Secure authentication</span>
-              </div>
+              
+              <button
+                onClick={() => {
+                  // Simulate admin login
+                  const adminAuth = {
+                    provider: 'google',
+                    email: 'nexodifyforyou@gmail.com',
+                    name: 'Nexodify Admin',
+                    picture: '',
+                    iat: new Date().toISOString()
+                  };
+                  localStorage.setItem('ava_auth', JSON.stringify(adminAuth));
+                  navigate('/dashboard');
+                }}
+                className="w-full py-3 px-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl hover:bg-emerald-500/20 transition-colors text-sm font-medium"
+              >
+                Continue as Admin (nexodifyforyou@gmail.com)
+              </button>
+              
+              <button
+                onClick={() => {
+                  // Simulate regular user login
+                  const userAuth = {
+                    provider: 'google',
+                    email: 'demo@example.com',
+                    name: 'Demo User',
+                    picture: '',
+                    iat: new Date().toISOString()
+                  };
+                  localStorage.setItem('ava_auth', JSON.stringify(userAuth));
+                  // Create starter wallet
+                  const wallet = {
+                    plan: 'starter',
+                    monthly_credits: 10,
+                    credits_available: 10,
+                    renewal_date: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString().split('T')[0],
+                    ledger: []
+                  };
+                  localStorage.setItem('ava_wallet', JSON.stringify(wallet));
+                  navigate('/dashboard');
+                }}
+                className="w-full py-3 px-4 bg-white/[0.04] border border-white/[0.12] text-white/70 rounded-xl hover:bg-white/[0.08] transition-colors text-sm font-medium"
+              >
+                Continue as Demo User (10 credits)
+              </button>
             </div>
 
             {/* Info */}
