@@ -647,7 +647,7 @@ export default function LandingPage() {
             <div className="flex items-center gap-6 text-sm">
               <Link to="/privacy" className="text-white/40 hover:text-white/70 transition-colors">Privacy</Link>
               <Link to="/terms" className="text-white/40 hover:text-white/70 transition-colors">Terms</Link>
-              <a href="mailto:support@nexodify.com" className="text-white/40 hover:text-white/70 transition-colors">Support</a>
+              <a href="mailto:nexodifyforyou@gmail.com?subject=Nexodify%20AVA%20Support&body=Hi%20Nexodify%20Team%2C%0A%0A%5BDescribe%20your%20issue%5D%0A%0AThanks%2C" className="text-white/40 hover:text-white/70 transition-colors">Support</a>
             </div>
           </div>
         </div>
