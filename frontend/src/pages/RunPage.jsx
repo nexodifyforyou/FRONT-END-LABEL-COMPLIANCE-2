@@ -223,6 +223,7 @@ export default function RunPage() {
         compliance_score: results.compliance_score,
         evidence_confidence: results.evidence_confidence,
         checks: results.checks,
+        halalChecks: results.halalChecks,
         pdf_type: halalEnabled ? 'halal' : 'eu',
         label_file_name: labelFile.name,
         tds_file_name: tdsFile.name,
