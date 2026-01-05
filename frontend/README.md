@@ -1,70 +1,193 @@
-# Getting Started with Create React App
+# Nexodify AVA Label Compliance Preflight - Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A premium React frontend for the AVA Label Compliance Preflight system.
 
-## Available Scripts
+## Overview
 
-In the project directory, you can run:
+This frontend provides a complete user interface for:
+- User authentication (login, register, email verification, password reset)
+- Compliance audit wizard (product info → file upload → run → results)
+- Run history and detailed results viewing
+- Credit-based billing management
+- Admin panel for user management
 
-### `npm start`
+## Technology Stack
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- **React 19** with React Router 7
+- **Tailwind CSS** for styling
+- **Shadcn/UI** components
+- **Framer Motion** for animations
+- **React Hook Form + Zod** for form validation
+- **Axios** for API requests
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Project Structure
 
-### `npm test`
+```
+/app/frontend/src/
+├── components/
+│   ├── layout/
+│   │   └── DashboardLayout.jsx    # Main app layout with sidebar
+│   ├── ui/                        # Shadcn UI components
+│   └── ProtectedRoute.jsx         # Auth route guards
+├── context/
+│   └── AuthContext.jsx            # Authentication state
+├── lib/
+│   ├── api.js                     # API client configuration
+│   └── utils.js                   # Utility functions
+├── pages/
+│   ├── auth/
+│   │   ├── LoginPage.jsx
+│   │   ├── RegisterPage.jsx
+│   │   ├── ForgotPasswordPage.jsx
+│   │   ├── ResetPasswordPage.jsx
+│   │   └── VerifyEmailPage.jsx
+│   ├── audit/
+│   │   └── NewAuditPage.jsx       # Multi-step audit wizard
+│   ├── runs/
+│   │   ├── RunHistoryPage.jsx
+│   │   └── RunDetailPage.jsx      # Results + correction box
+│   ├── admin/
+│   │   └── AdminPage.jsx
+│   ├── DashboardPage.jsx
+│   ├── BillingPage.jsx
+│   ├── SettingsPage.jsx
+│   └── LandingPage.jsx
+├── App.js                         # Main app with routes
+└── index.css                      # Global styles
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Configuration
 
-### `npm run build`
+### Environment Variables
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Set in `/app/frontend/.env`:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```env
+# Backend API URL - point to your Node/Express server
+REACT_APP_BACKEND_URL=https://api.nexodify.com
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## API Contract
 
-### `npm run eject`
+The frontend expects these endpoints from your Node/Express backend. See `/app/docs/API_CONTRACT.md` for full specification.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login (returns JWT)
+- `POST /api/auth/verify-email` - Verify email token
+- `POST /api/auth/forgot-password` - Request password reset
+- `POST /api/auth/reset-password` - Reset password with token
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### User
+- `GET /api/me` - Get current user + credits
+- `PUT /api/me` - Update profile
+- `PUT /api/me/password` - Change password
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Runs (Audits)
+- `POST /api/run` - Create new audit (multipart/form-data)
+- `GET /api/runs` - List runs with pagination/filtering
+- `GET /api/runs/:run_id` - Get run details
+- `GET /api/runs/:run_id/report.pdf` - Download PDF
+- `POST /api/runs/:run_id/rerun` - Re-run with corrections
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Billing
+- `GET /api/billing/wallet` - Get credit balance
+- `GET /api/billing/ledger` - Transaction history
+- `POST /api/billing/checkout` - Create Stripe checkout
+- `POST /api/billing/portal` - Stripe customer portal
 
-## Learn More
+### Admin
+- `GET /api/admin/stats` - System stats
+- `GET /api/admin/users` - List users
+- `POST /api/admin/grant-credits` - Manually grant credits
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Development
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```bash
+# Install dependencies
+cd /app/frontend
+yarn install
 
-### Code Splitting
+# Start development server
+yarn start
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+# Build for production
+yarn build
+```
 
-### Analyzing the Bundle Size
+## Deployment
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+1. Build the frontend:
+```bash
+yarn build
+```
 
-### Making a Progressive Web App
+2. Copy to your web server:
+```bash
+scp -r build/ user@server:/var/www/nexodify-app/
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+3. Configure Nginx (see `/app/docs/NGINX_CONFIG.md`)
 
-### Advanced Configuration
+## Pages Overview
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+### Landing Page (`/`)
+- Hero section with value proposition
+- Features overview
+- CTA buttons to register/login
 
-### Deployment
+### Auth Pages
+- **Login** (`/login`) - Email/password login
+- **Register** (`/register`) - Account creation with company info
+- **Forgot Password** (`/forgot-password`) - Request reset email
+- **Reset Password** (`/reset-password?token=xxx`) - Set new password
+- **Verify Email** (`/verify-email?token=xxx`) - Confirm email
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### Dashboard (`/dashboard`)
+- Quick stats (total audits, passed, failed)
+- Recent audit runs
+- Quick action cards
 
-### `npm run build` fails to minify
+### New Audit Wizard (`/audit/new`)
+1. **Step 1: Product Info** - Name, company, country, languages
+2. **Step 2: Upload Files** - Label and TDS document upload
+3. **Step 3: Review & Run** - Confirm details and credit cost
+4. **Step 4: Results** - Success/failure summary with link to details
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### Run History (`/runs`)
+- Searchable/filterable list of all audits
+- Status badges and scores
+- Quick PDF download
+
+### Run Details (`/runs/:run_id`)
+- Overall score and status
+- Expandable check cards with:
+  - Status (Pass/Fail/Warning)
+  - Severity level
+  - Details and recommended fixes
+  - Regulatory sources
+- Correction submission box
+- Re-run button
+
+### Billing (`/billing`)
+- Current credit balance
+- Subscription plans (Starter, Growth, Pro, Enterprise)
+- One-time credit top-ups
+- Transaction history
+
+### Settings (`/settings`)
+- Profile information
+- Password change
+
+### Admin (`/admin`)
+- System statistics
+- User list
+- Manual credit granting
+
+## Test IDs
+
+All interactive elements have `data-testid` attributes for testing:
+- `login-email-input`, `login-password-input`, `login-submit-btn`
+- `register-name-input`, `register-email-input`, etc.
+- `new-audit-btn`, `product-name-input`, `run-audit-btn`
+- `download-pdf-btn`, `correction-textarea`, `rerun-btn`
