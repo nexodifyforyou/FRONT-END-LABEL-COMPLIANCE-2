@@ -366,6 +366,44 @@ export default function HistoryPage() {
           </div>
         )}
       </main>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+        <DialogContent className="bg-[#0f1219] border-white/[0.12] text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-rose-400" />
+              Delete Run
+            </DialogTitle>
+            <DialogDescription className="text-white/60">
+              Are you sure you want to delete this run? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {deleteConfirm && (
+            <div className="p-4 bg-white/[0.02] border border-white/[0.08] rounded-xl">
+              <div className="text-sm font-medium text-white/90">{deleteConfirm.product_name}</div>
+              <div className="text-xs text-white/50">{deleteConfirm.company_name}</div>
+              <div className="text-xs text-white/40 font-mono mt-1">{deleteConfirm.run_id}</div>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteConfirm(null)}
+              className="border-white/[0.12] text-white/70 hover:bg-white/[0.04]"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => handleDeleteRun(deleteConfirm.run_id)}
+              className="bg-rose-500 hover:bg-rose-600 text-white"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
