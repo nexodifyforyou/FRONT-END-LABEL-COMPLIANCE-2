@@ -137,12 +137,12 @@ export default function LandingPage() {
               <span className="text-lg font-semibold text-white/95">Nexodify</span>
             </Link>
             <div className="flex items-center gap-3">
-              <Link to="/login">
+              <Link to="/signin">
                 <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/[0.06]">
                   Sign In
                 </Button>
               </Link>
-              <Link to="/register">
+              <Link to="/signin">
                 <Button 
                   className="bg-[#5B6CFF] hover:bg-[#4A5BEE] text-white border-0 rounded-xl px-5 shadow-lg shadow-[#5B6CFF]/20 hover:shadow-[#5B6CFF]/30 transition-all"
                   data-testid="get-started-btn"
