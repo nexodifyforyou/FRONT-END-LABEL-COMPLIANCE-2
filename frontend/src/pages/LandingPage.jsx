@@ -522,13 +522,15 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <Button 
-                variant="outline"
-                className="bg-transparent border-white/[0.14] text-white/80 hover:bg-white/[0.04] hover:border-white/[0.18] hover:text-white rounded-xl px-6 transition-all duration-300"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Download Sample PDF
-              </Button>
+              <Link to="/sample-report">
+                <Button 
+                  variant="outline"
+                  className="bg-transparent border-white/[0.14] text-white/80 hover:bg-white/[0.04] hover:border-white/[0.18] hover:text-white rounded-xl px-6 transition-all duration-300"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  View Sample PDF
+                </Button>
+              </Link>
             </div>
 
             {/* PDF Preview Visual */}
