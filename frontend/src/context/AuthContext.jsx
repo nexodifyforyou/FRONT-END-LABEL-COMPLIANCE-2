@@ -94,6 +94,31 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  // Dev login (for testing)
+  const devLogin = useCallback((authData, walletData = null) => {
+    localStorage.setItem('ava_auth', JSON.stringify(authData));
+    setUser(authData);
+    
+    // Handle wallet for non-admin users
+    if (authData.email !== ADMIN_EMAIL) {
+      if (walletData) {
+        localStorage.setItem('ava_wallet', JSON.stringify(walletData));
+        setWallet(walletData);
+      } else {
+        const existingWallet = localStorage.getItem('ava_wallet');
+        if (existingWallet) {
+          setWallet(JSON.parse(existingWallet));
+        } else {
+          const newWallet = createDefaultWallet();
+          localStorage.setItem('ava_wallet', JSON.stringify(newWallet));
+          setWallet(newWallet);
+        }
+      }
+    }
+    
+    return { success: true };
+  }, []);
+
   // Deduct credits
   const deductCredits = useCallback((amount, reason, runId) => {
     if (isAdmin) return true; // Admin never deducts
