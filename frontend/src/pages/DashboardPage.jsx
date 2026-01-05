@@ -527,12 +527,20 @@ export default function DashboardPage() {
                     Start New Run
                   </Button>
                   <Button
-                    onClick={handleRunSampleDemo}
+                    onClick={() => handleRunSampleDemo(false)}
                     variant="outline"
                     className="w-full justify-start border-white/[0.12] text-white/70 hover:bg-white/[0.04] rounded-xl h-10"
                   >
                     <Play className="mr-2 h-4 w-4" />
-                    Run Sample Demo
+                    Run EU Demo
+                  </Button>
+                  <Button
+                    onClick={() => handleRunSampleDemo(true)}
+                    variant="outline"
+                    className="w-full justify-start border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 rounded-xl h-10"
+                  >
+                    <Moon className="mr-2 h-4 w-4" />
+                    Run Halal Demo
                   </Button>
                   <Button
                     onClick={() => runs.length > 0 && navigate(`/report/${runs[0].run_id}`)}
@@ -542,15 +550,6 @@ export default function DashboardPage() {
                   >
                     <RefreshCw className="mr-2 h-4 w-4" />
                     Re-run Last
-                  </Button>
-                  <Button
-                    variant="outline"
-                    disabled
-                    className="w-full justify-start border-white/[0.12] text-white/50 rounded-xl h-10 opacity-50"
-                  >
-                    <FileText className="mr-2 h-4 w-4" />
-                    Use Template
-                    <span className="ml-auto text-[10px] bg-white/10 px-1.5 py-0.5 rounded">Soon</span>
                   </Button>
                 </div>
               </div>
