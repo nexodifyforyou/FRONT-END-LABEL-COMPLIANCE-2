@@ -682,6 +682,255 @@ export default function ReportPage() {
               Run New Preflight
             </Button>
           </motion.div>
+
+          {/* Corrections & Re-run Section - Only shown on valid report */}
+          {run && run.run_id && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="mt-10"
+            >
+              <div className="bg-gradient-to-b from-white/[0.04] to-white/[0.02] border border-white/[0.08] rounded-2xl overflow-hidden">
+                {/* Section Header */}
+                <div className="px-6 py-4 border-b border-white/[0.06] flex items-center gap-3">
+                  <Edit3 className="h-5 w-5 text-[#5B6CFF]" />
+                  <h3 className="text-lg font-semibold text-white/90">Corrections & Re-run</h3>
+                  {run.is_rerun && (
+                    <span className="px-2 py-0.5 text-xs bg-amber-500/20 text-amber-400 rounded-full border border-amber-500/30">
+                      Re-run
+                    </span>
+                  )}
+                </div>
+
+                <div className="p-6 space-y-6">
+                  {/* A) Corrections Text */}
+                  <div className="space-y-2">
+                    <Label htmlFor="corrections" className="text-white/70 text-sm font-medium">
+                      What should be corrected? *
+                    </Label>
+                    <Textarea
+                      id="corrections"
+                      value={correctionsText}
+                      onChange={(e) => setCorrectionsText(e.target.value)}
+                      placeholder="Describe the corrections needed. E.g., 'Update allergen emphasis for milk and hazelnuts. Correct QUID percentage for cocoa. Fix date marking format to DD/MM/YYYY.'"
+                      className="min-h-[120px] bg-white/[0.04] border-white/[0.12] text-white placeholder:text-white/30 focus:border-[#5B6CFF] resize-none"
+                    />
+                    <p className="text-white/40 text-xs">
+                      Describe the changes needed for the label. The system will re-analyze with these corrections in mind.
+                    </p>
+                  </div>
+
+                  {/* B) Structured Overrides (Collapsible) */}
+                  <div className="border border-white/[0.08] rounded-xl overflow-hidden">
+                    <button
+                      onClick={() => setShowOverrides(!showOverrides)}
+                      className="w-full px-4 py-3 flex items-center justify-between bg-white/[0.02] hover:bg-white/[0.04] transition-colors"
+                    >
+                      <span className="text-sm font-medium text-white/70">Structured overrides (optional)</span>
+                      {showOverrides ? (
+                        <ChevronUp className="h-4 w-4 text-white/50" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-white/50" />
+                      )}
+                    </button>
+
+                    {showOverrides && (
+                      <div className="p-4 space-y-4 border-t border-white/[0.06]">
+                        {/* Form Fields */}
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <Label htmlFor="net_quantity" className="text-white/60 text-xs">Net Quantity</Label>
+                            <Input
+                              id="net_quantity"
+                              value={overrideFields.net_quantity}
+                              onChange={(e) => handleOverrideChange('net_quantity', e.target.value)}
+                              placeholder="e.g., 100 g ℮"
+                              className="bg-white/[0.04] border-white/[0.12] text-white placeholder:text-white/30 text-sm"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label htmlFor="date_marking" className="text-white/60 text-xs">Date Marking</Label>
+                            <Input
+                              id="date_marking"
+                              value={overrideFields.date_marking}
+                              onChange={(e) => handleOverrideChange('date_marking', e.target.value)}
+                              placeholder="e.g., Best before: DD/MM/YYYY"
+                              className="bg-white/[0.04] border-white/[0.12] text-white placeholder:text-white/30 text-sm"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label htmlFor="fbo_name" className="text-white/60 text-xs">FBO Name</Label>
+                            <Input
+                              id="fbo_name"
+                              value={overrideFields.fbo_name}
+                              onChange={(e) => handleOverrideChange('fbo_name', e.target.value)}
+                              placeholder="e.g., Example Foods S.r.l."
+                              className="bg-white/[0.04] border-white/[0.12] text-white placeholder:text-white/30 text-sm"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label htmlFor="fbo_address" className="text-white/60 text-xs">FBO Address</Label>
+                            <Input
+                              id="fbo_address"
+                              value={overrideFields.fbo_address}
+                              onChange={(e) => handleOverrideChange('fbo_address', e.target.value)}
+                              placeholder="e.g., Via Roma 123, 00100 Rome, Italy"
+                              className="bg-white/[0.04] border-white/[0.12] text-white placeholder:text-white/30 text-sm"
+                            />
+                          </div>
+                          <div className="space-y-1.5 sm:col-span-2">
+                            <Label htmlFor="languages" className="text-white/60 text-xs">Languages (comma-separated)</Label>
+                            <Input
+                              id="languages"
+                              value={overrideFields.languages}
+                              onChange={(e) => handleOverrideChange('languages', e.target.value)}
+                              placeholder="e.g., English, Italian, German"
+                              className="bg-white/[0.04] border-white/[0.12] text-white placeholder:text-white/30 text-sm"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Advanced JSON Toggle */}
+                        <div className="border-t border-white/[0.06] pt-4">
+                          <button
+                            onClick={() => setShowAdvancedJson(!showAdvancedJson)}
+                            className="flex items-center gap-2 text-xs text-white/50 hover:text-white/70 transition-colors"
+                          >
+                            <Code className="h-3.5 w-3.5" />
+                            {showAdvancedJson ? 'Hide' : 'Show'} Advanced JSON Editor
+                          </button>
+
+                          {showAdvancedJson && (
+                            <div className="mt-3 space-y-2">
+                              <Label className="text-white/60 text-xs">Advanced JSON</Label>
+                              <Textarea
+                                value={advancedJson}
+                                onChange={(e) => handleAdvancedJsonChange(e.target.value)}
+                                className="font-mono text-xs min-h-[100px] bg-white/[0.04] border-white/[0.12] text-white placeholder:text-white/30"
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Preview JSON (read-only) */}
+                        <div className="space-y-2">
+                          <Label className="text-white/50 text-xs">Preview JSON (sent with request)</Label>
+                          <pre className="p-3 bg-black/20 rounded-lg text-xs font-mono text-white/60 overflow-x-auto">
+                            {advancedJson}
+                          </pre>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Error Display */}
+                  {rerunError && (
+                    <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-lg flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-rose-400 flex-shrink-0" />
+                      <span className="text-rose-400 text-sm">{rerunError}</span>
+                    </div>
+                  )}
+
+                  {/* C) Re-run Button */}
+                  <div className="space-y-3">
+                    <Button
+                      onClick={handleRerun}
+                      disabled={isRerunning || !correctionsText.trim()}
+                      className="w-full bg-[#5B6CFF] hover:bg-[#4A5BEE] text-white h-12 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isRerunning ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Re-running...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                          Re-run with corrections
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-white/40 text-xs text-center">
+                      Re-run may cost 1 credit if OCR can be reused; otherwise backend may charge extra per page.
+                    </p>
+                  </div>
+
+                  {/* D) PDF Consistency Note */}
+                  <div className="p-3 bg-[#5B6CFF]/5 border border-[#5B6CFF]/20 rounded-lg">
+                    <p className="text-[#5B6CFF]/80 text-xs flex items-center gap-2">
+                      <FileText className="h-3.5 w-3.5 flex-shrink-0" />
+                      The downloaded PDF for this run includes the corrections summary used.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Attempt History */}
+              {attemptHistory.length > 0 && (
+                <div className="mt-6 bg-white/[0.02] border border-white/[0.06] rounded-2xl overflow-hidden">
+                  <div className="px-6 py-3 border-b border-white/[0.06] flex items-center gap-2">
+                    <History className="h-4 w-4 text-white/50" />
+                    <h4 className="text-sm font-medium text-white/70">Attempt History</h4>
+                    <span className="text-xs text-white/40">({attemptHistory.length} runs)</span>
+                  </div>
+                  <div className="divide-y divide-white/[0.04]">
+                    {attemptHistory.map((attempt) => (
+                      <div
+                        key={attempt.run_id}
+                        className={`px-6 py-3 flex items-center justify-between hover:bg-white/[0.02] transition-colors ${
+                          attempt.run_id === run.run_id ? 'bg-[#5B6CFF]/5 border-l-2 border-l-[#5B6CFF]' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-mono text-white/60">{attempt.run_id}</span>
+                              {attempt.run_id === run.run_id && (
+                                <span className="px-1.5 py-0.5 text-[10px] bg-[#5B6CFF]/20 text-[#5B6CFF] rounded">Current</span>
+                              )}
+                              {attempt.is_rerun && (
+                                <span className="px-1.5 py-0.5 text-[10px] bg-amber-500/20 text-amber-400 rounded">Re-run</span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <Clock className="h-3 w-3 text-white/30" />
+                              <span className="text-xs text-white/40">{new Date(attempt.ts).toLocaleString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`text-sm font-medium ${
+                            attempt.compliance_score >= 85 ? 'text-emerald-400' :
+                            attempt.compliance_score >= 70 ? 'text-amber-400' : 'text-rose-400'
+                          }`}>
+                            {attempt.compliance_score}%
+                          </span>
+                          <span className={`px-2 py-0.5 text-xs rounded-full border ${
+                            attempt.verdict === 'PASS' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
+                            attempt.verdict === 'FAIL' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' :
+                            'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                          }`}>
+                            {attempt.verdict}
+                          </span>
+                          {attempt.run_id !== run.run_id && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => navigate(`/report/${attempt.run_id}`)}
+                              className="text-white/50 hover:text-white hover:bg-white/[0.06]"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
         </div>
       </div>
 
