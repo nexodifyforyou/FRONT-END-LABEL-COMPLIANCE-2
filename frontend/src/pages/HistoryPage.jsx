@@ -275,6 +275,7 @@ export default function HistoryPage() {
                         size="sm"
                         onClick={() => navigate(`/report/${run.run_id}`)}
                         className="text-white/60 hover:text-white hover:bg-white/[0.06]"
+                        title="View Report"
                       >
                         <ExternalLink className="h-4 w-4" />
                       </Button>
@@ -283,8 +284,18 @@ export default function HistoryPage() {
                         size="sm"
                         onClick={() => handleDownloadPdf(run)}
                         className="text-white/60 hover:text-white hover:bg-white/[0.06]"
+                        title="Download PDF"
                       >
                         <Download className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeleteConfirm(run)}
+                        className="text-white/60 hover:text-rose-400 hover:bg-rose-500/10"
+                        title="Delete Run"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
