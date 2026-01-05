@@ -102,83 +102,84 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: Frontend-only React application for Nexodify AVA Label Compliance Preflight. Build premium dark theme landing page and sample report page with EU 1169/2011 focus, Print Verification Pack, and Halal Export-Readiness module.
+user_problem_statement: Extend existing Nexodify AVA frontend with streamlined user flow - Login → Dashboard → Run (wizard) → Interactive Report → PDF download → History. Uses localStorage for MVP with Google OAuth, credit system, and admin override.
 
 frontend:
-  - task: "Landing page with EU-first positioning"
+  - task: "Google OAuth Sign In"
     implemented: true
-    working: true
-    file: "/app/frontend/src/pages/LandingPage.jsx"
+    working: needs_testing
+    file: "/app/frontend/src/pages/auth/SignInPage.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
-      - working: true
+      - working: needs_testing
         agent: "main"
-        comment: "Landing page fully implemented with EU 1169/2011 hero, feature cards, multi-food category section, Halal module callout, How It Works, FAQ, and final CTAs"
-      - working: true
-        agent: "testing"
-        comment: "✅ Landing page comprehensively tested. Dark theme (#070A12) verified, EU 1169/2011 + Optional Halal Preflight badge present, hero headline 'EU Label Compliance, Preflighted.' correct, both CTA buttons working, product proof montage with dashboard mock and 78% score, all 4 feature cards found (EU 1169/2011 Checks, Label ↔ TDS Cross-Check, Evidence + Sources, Print Verification Pack), multi-food category section with 12 category chips (Dairy, Meat & Fish, Confectionery, etc.), Halal Export-Readiness section, How it Works with 3 steps, FAQ section with 5 expandable questions, final CTA section. Mobile (390x844) and tablet (768x1024) responsiveness working. Minor: FAQ expansion needs improvement but core functionality works."
+        comment: "Google Sign In page created with GIS integration"
 
-  - task: "Sample Report Interactive Page"
+  - task: "Dashboard with 3 cards (New Run, History, Credits)"
     implemented: true
-    working: true
-    file: "/app/frontend/src/pages/SampleReportPage.jsx"
+    working: needs_testing
+    file: "/app/frontend/src/pages/DashboardPage.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
-    status_history:
-      - working: true
-        agent: "main"
-        comment: "Sample report page shows Milk Chocolate Bar product with 78% compliance score, 6 findings with evidence, Label-TDS cross-check, Print Verification Pack with sign-off fields, and Halal Export-Readiness module with 10 checks"
-      - working: true
-        agent: "testing"
-        comment: "✅ Sample report page fully verified. Correct product 'Milk Chocolate Bar with Hazelnuts (100 g)' (NOT Omega-3), 78% compliance score, 2 Critical/4 Warnings/14 Passed findings, 6 issues identified with severity badges, Evidence & Fix Details with code excerpts, Label ↔ TDS Cross-Check with 5 matches/3 mismatches, Print Verification Pack with sign-off fields and pre-press checklist, Halal Export-Readiness with 10 checks. All content verified as per requirements."
+    needs_retesting: true
 
-  - task: "Downloadable Sample PDF"
+  - task: "Run Wizard with file uploads and credit check"
     implemented: true
-    working: true
-    file: "/app/frontend/public/sample-report.pdf"
+    working: needs_testing
+    file: "/app/frontend/src/pages/RunPage.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
-    status_history:
-      - working: true
-        agent: "main"
-        comment: "Generated 7-page PDF using ReportLab with all required content: Executive Summary, Findings Overview, Evidence Details, Cross-Check Summary, Print Verification Pack, Halal Preflight, and Next Steps"
-      - working: true
-        agent: "testing"
-        comment: "✅ PDF download tested successfully. File downloads correctly as 'sample-report.pdf' with 15.1 KB size. Download functionality works from both landing page and sample report navbar."
+    needs_retesting: true
 
-  - task: "Navigation and Routing"
+  - task: "Interactive Report (reuses existing UI)"
     implemented: true
-    working: true
-    file: "/app/frontend/src/App.js"
+    working: needs_testing
+    file: "/app/frontend/src/pages/ReportPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+
+  - task: "History page with search and filters"
+    implemented: true
+    working: needs_testing
+    file: "/app/frontend/src/pages/HistoryPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+
+  - task: "Billing page with top-up"
+    implemented: true
+    working: needs_testing
+    file: "/app/frontend/src/pages/BillingPage.jsx"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: false
-    status_history:
-      - working: true
-        agent: "main"
-        comment: "Routes configured for / (landing), /sample-report, /login, /register, and protected dashboard routes"
-      - working: true
-        agent: "testing"
-        comment: "✅ Navigation tested successfully. Landing page (/) loads correctly, 'Open Interactive Sample' button navigates to /sample-report properly. All routing functionality working as expected."
+    needs_retesting: true
+
+  - task: "Auth context with localStorage wallet/credits"
+    implemented: true
+    working: needs_testing
+    file: "/app/frontend/src/context/AuthContext.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
 
 metadata:
   created_by: "main_agent"
-  version: "1.0"
+  version: "2.0"
   test_sequence: 1
   run_ui: true
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Complete flow: Login → Dashboard → Run → Report → History"
+    - "Credit system and admin override"
+    - "PDF download functionality"
   stuck_tasks: []
-  test_all: false
+  test_all: true
   test_priority: "high_first"
 
 agent_communication:
   - agent: "main"
-    message: "Implemented all required features: Landing page with EU-first copy, multi-food category section, Halal module. Sample report page with Milk Chocolate Bar product, Print Verification Pack, and Halal preflight. Generated static PDF (15KB, 7 pages). Please test: 1) Landing page sections and CTAs 2) Sample report page content 3) PDF download functionality 4) Mobile responsiveness"
-  - agent: "testing"
-    message: "✅ COMPREHENSIVE TESTING COMPLETED - All major features verified successfully. Landing page: Dark theme, EU badge, hero headline, CTAs, product montage, 4 feature cards, 12 category chips, Halal section, How it Works (3 steps), FAQ section, final CTA. Sample report: Correct product (Milk Chocolate Bar with Hazelnuts, NOT Omega-3), 78% compliance, 2 Critical/4 Warnings/14 Passed, 6 findings with evidence, Label-TDS cross-check (5 matches/3 mismatches), Print Verification Pack with sign-off fields, Halal preflight (10 checks). PDF download: 15.1KB file downloads successfully. Mobile/tablet responsiveness working. Minor issue: FAQ expansion could be improved but doesn't affect core functionality. Application ready for production."
+    message: "Implemented streamlined user flow with Google OAuth, localStorage-based wallet/credits, and reused existing interactive report UI. Please test: 1) Sign in with Google 2) Dashboard cards and navigation 3) Run wizard with file uploads 4) Report page populated from localStorage 5) History with filters 6) Billing/top-up 7) Admin email unlimited credits"
