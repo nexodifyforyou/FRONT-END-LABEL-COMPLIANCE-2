@@ -28,17 +28,14 @@ import {
   Beef,
   CakeSlice,
 } from 'lucide-react';
+import { HALAL_SAMPLE_CHECKS, getSeverityColor } from '../lib/checkDefinitions';
 
-// Severity badge component
+// Severity badge component - using shared colors
 const SeverityBadge = ({ level }) => {
-  const styles = {
-    high: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
-    medium: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-    low: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-  };
+  const colors = getSeverityColor(level);
   return (
-    <span className={`px-2 py-0.5 text-xs font-medium rounded-full border ${styles[level]}`}>
-      {level.charAt(0).toUpperCase() + level.slice(1)}
+    <span className={`px-2 py-0.5 text-xs font-medium rounded-full border ${colors.bg} ${colors.text} ${colors.border}`}>
+      {colors.badge}
     </span>
   );
 };
