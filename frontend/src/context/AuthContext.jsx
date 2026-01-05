@@ -1,99 +1,179 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { authAPI, billingAPI } from '../lib/api';
 
 const AuthContext = createContext(null);
 
+const ADMIN_EMAIL = process.env.REACT_APP_ADMIN_EMAIL || 'nexodifyforyou@gmail.com';
+
+// Initialize wallet for new users
+const createDefaultWallet = () => ({
+  plan: 'starter',
+  monthly_credits: 10,
+  credits_available: 10,
+  renewal_date: getNextMonthFirstDay(),
+  ledger: []
+});
+
+function getNextMonthFirstDay() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split('T')[0];
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [credits, setCredits] = useState(0);
+  const [wallet, setWallet] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  const fetchUser = useCallback(async () => {
-    try {
-      const token = localStorage.getItem('ava_token');
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-      const { data } = await authAPI.me();
-      setUser(data.user);
-      setCredits(data.credits || 0);
-    } catch (err) {
-      console.error('Auth fetch error:', err);
-      localStorage.removeItem('ava_token');
-      localStorage.removeItem('ava_user');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Check if user is admin
+  const isAdmin = user?.email === ADMIN_EMAIL;
 
-  const refreshCredits = useCallback(async () => {
-    try {
-      const { data } = await billingAPI.getWallet();
-      setCredits(data.balance || 0);
-    } catch (err) {
-      console.error('Credits fetch error:', err);
-    }
-  }, []);
+  // Get credits display
+  const credits = isAdmin ? Infinity : (wallet?.credits_available || 0);
+  const creditsDisplay = isAdmin ? 'Unlimited' : (wallet?.credits_available || 0);
 
+  // Load auth from localStorage on mount
   useEffect(() => {
-    fetchUser();
-  }, [fetchUser]);
-
-  const login = async (email, password) => {
-    setError(null);
-    try {
-      const { data } = await authAPI.login({ email, password });
-      localStorage.setItem('ava_token', data.token);
-      localStorage.setItem('ava_user', JSON.stringify(data.user));
-      setUser(data.user);
-      setCredits(data.credits || 0);
-      return { success: true };
-    } catch (err) {
-      const message = err.response?.data?.error || 'Login failed';
-      setError(message);
-      return { success: false, error: message };
+    const storedAuth = localStorage.getItem('ava_auth');
+    const storedWallet = localStorage.getItem('ava_wallet');
+    
+    if (storedAuth) {
+      try {
+        const authData = JSON.parse(storedAuth);
+        setUser(authData);
+        
+        // Load or create wallet
+        if (storedWallet) {
+          setWallet(JSON.parse(storedWallet));
+        } else if (authData.email !== ADMIN_EMAIL) {
+          const newWallet = createDefaultWallet();
+          localStorage.setItem('ava_wallet', JSON.stringify(newWallet));
+          setWallet(newWallet);
+        }
+      } catch (e) {
+        console.error('Error parsing auth data:', e);
+        localStorage.removeItem('ava_auth');
+      }
     }
-  };
+    setLoading(false);
+  }, []);
 
-  const register = async (userData) => {
-    setError(null);
-    try {
-      const { data } = await authAPI.register(userData);
-      return { success: true, message: data.message };
-    } catch (err) {
-      const message = err.response?.data?.error || 'Registration failed';
-      setError(message);
-      return { success: false, error: message };
+  // Google login handler
+  const loginWithGoogle = useCallback((credential) => {
+    // Decode JWT from Google
+    const payload = JSON.parse(atob(credential.split('.')[1]));
+    
+    const authData = {
+      provider: 'google',
+      email: payload.email,
+      name: payload.name,
+      picture: payload.picture,
+      iat: new Date().toISOString()
+    };
+    
+    localStorage.setItem('ava_auth', JSON.stringify(authData));
+    setUser(authData);
+    
+    // Create wallet for non-admin users
+    if (authData.email !== ADMIN_EMAIL) {
+      const existingWallet = localStorage.getItem('ava_wallet');
+      if (!existingWallet) {
+        const newWallet = createDefaultWallet();
+        localStorage.setItem('ava_wallet', JSON.stringify(newWallet));
+        setWallet(newWallet);
+      } else {
+        setWallet(JSON.parse(existingWallet));
+      }
     }
-  };
+    
+    return { success: true };
+  }, []);
 
-  const logout = async () => {
-    try {
-      await authAPI.logout();
-    } catch (err) {
-      console.error('Logout error:', err);
-    } finally {
-      localStorage.removeItem('ava_token');
-      localStorage.removeItem('ava_user');
-      setUser(null);
-      setCredits(0);
+  // Logout
+  const logout = useCallback(() => {
+    localStorage.removeItem('ava_auth');
+    // Keep wallet data for when user logs back in
+    setUser(null);
+  }, []);
+
+  // Deduct credits
+  const deductCredits = useCallback((amount, reason, runId) => {
+    if (isAdmin) return true; // Admin never deducts
+    
+    if (!wallet || wallet.credits_available < amount) {
+      return false;
     }
-  };
+    
+    const newWallet = {
+      ...wallet,
+      credits_available: wallet.credits_available - amount,
+      ledger: [
+        ...wallet.ledger,
+        {
+          ts: new Date().toISOString(),
+          type: 'spend',
+          delta: -amount,
+          reason,
+          run_id: runId
+        }
+      ]
+    };
+    
+    localStorage.setItem('ava_wallet', JSON.stringify(newWallet));
+    setWallet(newWallet);
+    return true;
+  }, [wallet, isAdmin]);
+
+  // Add credits (top-up)
+  const addCredits = useCallback((amount, euroAmount) => {
+    const currentWallet = wallet || createDefaultWallet();
+    
+    const newWallet = {
+      ...currentWallet,
+      credits_available: currentWallet.credits_available + amount,
+      ledger: [
+        ...currentWallet.ledger,
+        {
+          ts: new Date().toISOString(),
+          type: 'topup',
+          delta: amount,
+          reason: `Top-up €${euroAmount}`,
+          run_id: null
+        }
+      ]
+    };
+    
+    localStorage.setItem('ava_wallet', JSON.stringify(newWallet));
+    setWallet(newWallet);
+    return true;
+  }, [wallet]);
+
+  // Check if user has enough credits
+  const hasEnoughCredits = useCallback((amount) => {
+    if (isAdmin) return true;
+    return wallet && wallet.credits_available >= amount;
+  }, [wallet, isAdmin]);
+
+  // Refresh wallet from localStorage
+  const refreshWallet = useCallback(() => {
+    const storedWallet = localStorage.getItem('ava_wallet');
+    if (storedWallet) {
+      setWallet(JSON.parse(storedWallet));
+    }
+  }, []);
 
   const value = {
     user,
+    wallet,
     credits,
+    creditsDisplay,
     loading,
-    error,
-    login,
-    register,
-    logout,
-    fetchUser,
-    refreshCredits,
     isAuthenticated: !!user,
-    isAdmin: user?.role === 'admin',
+    isAdmin,
+    loginWithGoogle,
+    logout,
+    deductCredits,
+    addCredits,
+    hasEnoughCredits,
+    refreshWallet,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
