@@ -172,14 +172,17 @@ export default function LandingPage() {
                     Run a Preflight <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
-                <Button 
-                  size="lg" 
-                  variant="outline"
-                  className="bg-transparent border-white/[0.14] text-white/80 hover:bg-white/[0.04] hover:border-white/[0.18] hover:text-white h-12 px-7 rounded-xl text-base font-medium transition-all duration-300"
-                >
-                  <FileText className="mr-2 h-4 w-4" />
-                  View Sample Report
-                </Button>
+                <Link to="/sample-report">
+                  <Button 
+                    size="lg" 
+                    variant="outline"
+                    className="bg-transparent border-white/[0.14] text-white/80 hover:bg-white/[0.04] hover:border-white/[0.18] hover:text-white h-12 px-7 rounded-xl text-base font-medium transition-all duration-300"
+                    data-testid="view-sample-report-btn"
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    View Sample Report
+                  </Button>
+                </Link>
               </div>
 
               {/* Micro-bullets */}
