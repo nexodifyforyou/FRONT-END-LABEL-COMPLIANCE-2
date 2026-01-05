@@ -232,28 +232,37 @@ export default function DashboardPage() {
     }
   };
 
-  const handleRunSampleDemo = () => {
-    // Create a sample demo run
+  const handleRunSampleDemo = (includeHalal = false) => {
+    // Generate check results from shared definitions
+    const euChecks = generateEUCheckResults();
+    const halalChecks = includeHalal ? generateHalalCheckResults() : null;
+    
+    const allChecks = includeHalal ? [...euChecks, ...halalChecks] : euChecks;
+    const criticalCount = allChecks.filter(c => c.status === 'critical').length;
+    const warningCount = allChecks.filter(c => c.status === 'warning').length;
+    const passCount = allChecks.filter(c => c.status === 'pass').length;
+    const totalChecks = allChecks.length;
+    const weightedScore = Math.round((passCount * 100 + warningCount * 60 + criticalCount * 20) / totalChecks);
+    
+    let verdict = 'PASS';
+    if (criticalCount > 2 || weightedScore < 60) verdict = 'FAIL';
+    else if (criticalCount > 0 || warningCount > 2 || weightedScore < 80) verdict = 'CONDITIONAL';
+    
+    // Create a sample demo run using shared definitions
     const demoRun = {
       run_id: `DEMO-${Date.now().toString(36).toUpperCase()}`,
       ts: new Date().toISOString(),
-      product_name: 'Sample Chocolate Bar',
+      product_name: includeHalal ? 'Premium Halal Chocolate' : 'Sample Chocolate Bar',
       company_name: 'Demo Foods Ltd.',
       country_of_sale: 'Italy',
       languages_provided: ['English', 'Italian'],
-      halal: false,
-      verdict: 'CONDITIONAL',
-      compliance_score: 78,
-      evidence_confidence: 85,
-      checks: [
-        { title: 'Allergen Emphasis', status: 'critical', source: 'Label' },
-        { title: 'QUID Percentage', status: 'warning', source: 'Label' },
-        { title: 'Net Quantity Format', status: 'pass', source: 'Label' },
-        { title: 'Nutrition Declaration', status: 'pass', source: 'Label' },
-        { title: 'Storage Conditions', status: 'warning', source: 'TDS' },
-        { title: 'Operator Address', status: 'pass', source: 'Label' },
-      ],
-      pdf_type: 'eu',
+      halal: includeHalal,
+      verdict: verdict,
+      compliance_score: weightedScore,
+      evidence_confidence: Math.floor(Math.random() * 15) + 80,
+      checks: euChecks,
+      halalChecks: halalChecks,
+      pdf_type: includeHalal ? 'halal' : 'eu',
       isDemo: true,
     };
     
