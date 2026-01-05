@@ -241,7 +241,7 @@ frontend:
     implemented: true
     working: false
     file: "/app/frontend/src/pages/ReportPage.jsx"
-    stuck_count: 1
+    stuck_count: 2
     priority: "high"
     needs_retesting: false
     status_history:
@@ -251,6 +251,9 @@ frontend:
       - working: false
         agent: "testing"
         comment: "❌ REPORT PAGE HALAL SECTION INCOMPLETE: Halal Module section found and displays correctly, but only shows 3/10 Halal checks from shared definitions. Found: 'Halal Certificate Provided', 'Certificate Expiry Valid', 'Gelatin Source Declaration'. Missing 7 checks including 'E-Number Source Verification' which breaks consistency with landing page. The fallback logic to show all 10 checks as 'not_evaluated' when halalChecks array is empty is not working properly. Need to fix the report page to display all 10 Halal check definitions from checkDefinitions.js."
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL ISSUE CONFIRMED: After testing the updated DashboardPage.jsx with Halal Demo functionality, the Report page is NOT displaying the Halal Module section at all. Successfully navigated through: 1) Signin page loads correctly, 2) Dashboard shows 'Run Halal Demo' button with Moon icon in Next Actions card, 3) Button click creates demo run and navigates to report page showing 'Premium Halal Chocolate' with 'Halal Module: Enabled'. However, when scrolling through the entire report page, NO Halal Module section is found. The Halal checks are completely missing from the report display. The generateHalalCheckResults() function in DashboardPage.jsx creates the data correctly, but ReportPage.jsx is not rendering the Halal section. Landing page correctly shows 4 sample Halal checks from shared definitions. URGENT: ReportPage.jsx Halal section rendering is broken."
 
 metadata:
   created_by: "main_agent"
