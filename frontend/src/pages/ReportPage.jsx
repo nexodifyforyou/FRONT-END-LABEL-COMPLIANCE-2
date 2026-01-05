@@ -27,28 +27,22 @@ import {
   Moon,
   RefreshCw,
   Coins,
+  Circle,
 } from 'lucide-react';
+import { getSeverityColor, HALAL_CHECK_DEFINITIONS } from '../lib/checkDefinitions';
 
-// Severity Badge - reused from SampleReportPage
+// Severity Badge - uses shared severity colors
 const SeverityBadge = ({ level }) => {
-  const styles = {
-    critical: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
-    high: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
-    warning: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-    medium: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-    pass: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-    low: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-  };
-  const label = level === 'high' ? 'Critical' : level === 'medium' ? 'Warning' : level === 'low' ? 'Info' : level === 'critical' ? 'Critical' : level.charAt(0).toUpperCase() + level.slice(1);
+  const colors = getSeverityColor(level);
   return (
-    <span className={`px-2 py-0.5 text-xs font-medium rounded-full border ${styles[level] || styles.warning}`}>
-      {label}
+    <span className={`px-2 py-0.5 text-xs font-medium rounded-full border ${colors.bg} ${colors.text} ${colors.border}`}>
+      {colors.badge}
     </span>
   );
 };
 
-// Finding Card - reused from SampleReportPage
-const FindingCard = ({ title, severity, source, fix }) => {
+// Finding Card for EU checks
+const FindingCard = ({ title, severity, source, description, reference }) => {
   const StatusIcon = severity === 'critical' || severity === 'high' ? XCircle : severity === 'warning' || severity === 'medium' ? AlertTriangle : CheckCircle;
   const statusColor = severity === 'critical' || severity === 'high' ? 'text-rose-400' : severity === 'warning' || severity === 'medium' ? 'text-amber-400' : 'text-emerald-400';
   
@@ -60,18 +54,60 @@ const FindingCard = ({ title, severity, source, fix }) => {
           <div className="flex items-center flex-wrap gap-2 mb-2">
             <span className="text-white/90 font-medium">{title}</span>
             <SeverityBadge level={severity} />
-            <span className="text-xs text-[#5B6CFF] bg-[#5B6CFF]/10 px-2 py-0.5 rounded-full border border-[#5B6CFF]/30">
-              {source}
-            </span>
+            {source && (
+              <span className="text-xs text-[#5B6CFF] bg-[#5B6CFF]/10 px-2 py-0.5 rounded-full border border-[#5B6CFF]/30">
+                {source}
+              </span>
+            )}
           </div>
-          {fix && <p className="text-white/55 text-sm">{fix}</p>}
+          {description && <p className="text-white/55 text-sm mb-1">{description}</p>}
+          {reference && <p className="text-white/30 text-xs">Ref: {reference}</p>}
         </div>
       </div>
     </div>
   );
 };
 
-// Category Chip - reused from SampleReportPage
+// Halal Check Card - special styling for Halal module
+const HalalCheckCard = ({ check }) => {
+  const colors = getSeverityColor(check.status);
+  const StatusIcon = check.status === 'critical' ? XCircle : 
+                     check.status === 'warning' ? AlertTriangle : 
+                     check.status === 'pass' ? CheckCircle : Circle;
+  
+  return (
+    <div className={`bg-emerald-500/[0.03] border border-emerald-500/20 rounded-xl p-4 hover:border-emerald-500/30 transition-all`}>
+      <div className="flex items-start gap-3">
+        <StatusIcon className={`h-5 w-5 mt-0.5 ${colors.text} flex-shrink-0`} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center flex-wrap gap-2 mb-2">
+            <span className="text-white/90 font-medium">{check.title}</span>
+            <SeverityBadge level={check.status} />
+            <span className="text-xs text-emerald-400/70 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+              {check.category}
+            </span>
+          </div>
+          <p className="text-white/55 text-sm mb-2">{check.description}</p>
+          {check.status !== 'pass' && check.status !== 'not_evaluated' && (
+            <div className="mt-2 p-2 bg-white/[0.02] rounded-lg">
+              <p className="text-xs text-amber-400/80 mb-1">
+                <strong>Why it matters:</strong> {check.whyItMatters}
+              </p>
+              <p className="text-xs text-emerald-400/80">
+                <strong>What to provide:</strong> {check.whatToProvide}
+              </p>
+            </div>
+          )}
+          {check.status === 'not_evaluated' && (
+            <p className="text-xs text-white/40 italic">Not evaluated / Missing info</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Category Chip
 const CategoryChip = ({ icon: Icon, label, active }) => (
   <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm ${active ? 'bg-[#5B6CFF]/10 border-[#5B6CFF]/30 text-[#5B6CFF]' : 'bg-white/[0.02] border-white/[0.08] text-white/60'}`}>
     <Icon className="h-3.5 w-3.5" />
@@ -148,9 +184,12 @@ export default function ReportPage() {
 
   // Derive data from run
   const scoreColor = run.compliance_score >= 85 ? 'text-emerald-400' : run.compliance_score >= 70 ? 'text-amber-400' : 'text-rose-400';
-  const criticalCount = run.checks?.filter(c => c.status === 'critical' || c.status === 'high').length || 0;
-  const warningCount = run.checks?.filter(c => c.status === 'warning' || c.status === 'medium').length || 0;
-  const passCount = run.checks?.filter(c => c.status === 'pass' || c.status === 'low').length || 0;
+  const euChecks = run.checks || [];
+  const halalChecks = run.halalChecks || [];
+  
+  const criticalCount = [...euChecks, ...halalChecks].filter(c => c.status === 'critical').length;
+  const warningCount = [...euChecks, ...halalChecks].filter(c => c.status === 'warning').length;
+  const passCount = [...euChecks, ...halalChecks].filter(c => c.status === 'pass').length;
 
   return (
     <div className="min-h-screen bg-[#070A12] text-white">
@@ -204,7 +243,7 @@ export default function ReportPage() {
             </p>
           </motion.div>
 
-          {/* Report Preview - REUSING SAME UI AS SampleReportPage */}
+          {/* Report Content */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -286,27 +325,28 @@ export default function ReportPage() {
               </div>
             </div>
 
-            {/* Page 2: Findings Overview */}
+            {/* Page 2: EU Findings Overview */}
             <div className="p-8 border-b border-white/[0.06]">
               <div className="flex items-center gap-2 mb-6">
                 <span className="px-3 py-1 bg-[#5B6CFF]/10 text-[#5B6CFF] text-xs font-medium rounded-full border border-[#5B6CFF]/30">
                   Page 2
                 </span>
-                <span className="text-white/50 text-sm">Findings Overview</span>
+                <span className="text-white/50 text-sm">EU 1169/2011 Findings</span>
               </div>
 
               <h3 className="text-xl font-semibold text-white/90 mb-6">
-                {run.checks?.length || 0} Checks Performed
+                {euChecks.length} EU Compliance Checks
               </h3>
 
               <div className="grid md:grid-cols-2 gap-3">
-                {run.checks?.map((check, i) => (
+                {euChecks.map((check, i) => (
                   <FindingCard
                     key={i}
                     title={check.title}
                     severity={check.status}
                     source={check.source}
-                    fix={check.fix}
+                    description={check.description}
+                    reference={check.reference}
                   />
                 ))}
               </div>
@@ -388,36 +428,49 @@ export default function ReportPage() {
               </div>
             </div>
 
-            {/* Halal Section (if enabled) */}
+            {/* Halal Section - CRITICAL: Uses shared check definitions */}
             {run.halal && (
               <div className="p-8 border-b border-white/[0.06]">
                 <div className="flex items-center gap-2 mb-6">
                   <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-medium rounded-full border border-emerald-500/30">
                     <Moon className="inline h-3 w-3 mr-1" />
-                    Halal
+                    Halal Module
                   </span>
                   <span className="text-white/50 text-sm">Halal Export-Readiness Preflight</span>
                 </div>
 
                 <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 mb-6">
-                  <div className="flex items-center justify-between">
-                    <span className="text-emerald-400 font-medium">Module Status</span>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-emerald-400 font-medium">Halal Export-Readiness Checks</span>
                     <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs rounded border border-emerald-500/30">
-                      Active
+                      {halalChecks.length} Checks
                     </span>
                   </div>
+                  <p className="text-white/50 text-sm">
+                    Preflight Label + Supplier TDS to flag missing certificates, high-risk ingredients, and documentation gaps.
+                  </p>
                 </div>
 
+                {/* Halal Checks - Using shared definitions */}
                 <div className="space-y-3">
-                  {run.checks?.filter(c => c.source === 'Input' || c.title.toLowerCase().includes('halal')).map((check, i) => (
-                    <FindingCard
-                      key={i}
-                      title={check.title}
-                      severity={check.status}
-                      source={check.source}
-                      fix={check.fix}
-                    />
-                  ))}
+                  {halalChecks.length > 0 ? (
+                    halalChecks.map((check, i) => (
+                      <HalalCheckCard key={i} check={check} />
+                    ))
+                  ) : (
+                    // Fallback: Show all checks as not_evaluated
+                    HALAL_CHECK_DEFINITIONS.map((check, i) => (
+                      <HalalCheckCard key={i} check={{ ...check, status: 'not_evaluated' }} />
+                    ))
+                  )}
+                </div>
+
+                {/* Disclaimer */}
+                <div className="mt-6 p-4 bg-amber-500/5 border border-amber-500/20 rounded-xl">
+                  <p className="text-amber-400/80 text-xs">
+                    <strong>Important:</strong> Halal determinations depend on target market and certification body. 
+                    This module provides preflight risk flags, not certification.
+                  </p>
                 </div>
               </div>
             )}
