@@ -258,6 +258,36 @@ frontend:
         agent: "testing"
         comment: "✅ HALAL DEMO FLOW COMPLETE SUCCESS: Comprehensive testing confirms the Halal module consistency fix is working perfectly. VERIFIED: 1) Auth flow fixed - admin login properly uses AuthContext's devLogin function and redirects to dashboard, 2) Dashboard shows 'Run Halal Demo' button with Moon icon in Next Actions card, 3) Button click successfully creates demo run and navigates to report page, 4) Report displays 'Premium Halal Chocolate' with 'Halal Module: Enabled', 5) CRITICAL SUCCESS: Found ALL 10 Halal checks from shared definitions displayed correctly: Halal Certificate Provided, Certificate Expiry Valid, Certifying Body Recognized, Gelatin Source Declaration, Animal-Derived Ingredient Risk, E-Number Source Verification, Alcohol/Solvent/Carrier Flags, Cross-Contamination Statement, Traceability Fields Complete, Halal Logo Usage Check, 6) Footer correctly shows 'EU + Halal' (not 'EU Only'). The Halal module single source of truth implementation is working correctly with checkDefinitions.js being properly used by both landing page and report page."
 
+  - task: "History Page Delete Button"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/HistoryPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "Added delete functionality with confirmation dialog. Users can delete individual runs from history. Includes trash icon button, confirmation dialog with run details, and proper localStorage cleanup."
+      - working: true
+        agent: "testing"
+        comment: "✅ HISTORY PAGE DELETE BUTTON WORKING PERFECTLY: Comprehensive testing verified all functionality: 1) Delete buttons (trash icons) appear correctly for each run in history list, 2) Click delete button opens confirmation dialog with proper title 'Delete Run', 3) Dialog displays run details including product name, company, and run ID, 4) Delete confirmation successfully removes run from history (verified count reduction), 5) localStorage cleanup working properly (removes both run data and corrections), 6) UI updates immediately after deletion. Feature is production-ready with excellent UX."
+
+  - task: "Corrections & Re-run Section on Report Page"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/ReportPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "Added full correction/re-run UI with: textarea for corrections text, collapsible structured overrides panel (net_quantity, date_marking, fbo_name, fbo_address, languages), advanced JSON editor, preview JSON display, re-run button with loading state, error handling, and Attempt History list showing related runs. The section only appears on the Report page when a valid run is loaded."
+      - working: true
+        agent: "testing"
+        comment: "✅ CORRECTIONS & RE-RUN SECTION WORKING PERFECTLY: Full functionality verified through comprehensive testing: 1) Section appears correctly on report pages with proper 'Corrections & Re-run' heading and styling, 2) Contains all required elements: corrections textarea with proper label 'What should be corrected? *', collapsible 'Structured overrides (optional)' panel, 're-run with corrections' button, credit cost helper text, PDF consistency note, 3) Structured overrides panel expands correctly showing all 5 form fields (Net Quantity, Date Marking, FBO Name, FBO Address, Languages), 4) Advanced JSON Editor toggle works with live JSON preview that updates as form fields change, 5) Form input synchronization working perfectly (field changes immediately update JSON preview), 6) Re-run functionality complete: accepts corrections text, processes form data, shows loading state with 'Re-running...' text, creates new run with corrections applied, navigates to new report with different run ID, 7) Attempt History section displays correctly showing related runs with proper navigation links. Feature is production-ready with excellent UX and full functionality."
+
 metadata:
   created_by: "main_agent"
   version: "2.0"
