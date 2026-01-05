@@ -1,0 +1,157 @@
+{
+  "identity": {
+    "name": "Nexodify AVA Label Compliance Preflight",
+    "persona": "E1 - The Anti-AI Designer",
+    "vibe": "Swiss Precision meets Enterprise Trust. High contrast, data-dense, document-centric.",
+    "principles": [
+      "Fusion: Bloomberg Terminal data density x Aesop minimalism",
+      "Emotion: Trust, Authority, Calm Precision",
+      "Content is King: The Compliance Report is the hero",
+      "Zoom In: Micro-interactions on data points",
+      "Negative Space: Generous padding around the 'paper' document container"
+    ]
+  },
+  "typography": {
+    "imports": [
+      "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Geist:wght@100..900&display=swap"
+    ],
+    "family": {
+      "heading": "\"Outfit\", sans-serif",
+      "body": "\"Geist\", \"Inter\", sans-serif",
+      "mono": "\"Geist Mono\", \"JetBrains Mono\", monospace"
+    },
+    "rules": [
+      "Headings (H1-H3) must use Outfit. Weight: 600 or 700.",
+      "Body text must use Geist. Weight: 400 for text, 500 for labels.",
+      "Data/Code must use Geist Mono.",
+      "Letter spacing: tracking-tight for all headings > 24px.",
+      "Line height: leading-none for headings, leading-relaxed for body."
+    ]
+  },
+  "colors": {
+    "palette": {
+      "primary": {
+        "light": "#0f172a",
+        "dark": "#f8fafc",
+        "description": "Stark Black/White for primary actions. No generic blue buttons."
+      },
+      "accent": {
+        "default": "#6366f1",
+        "hover": "#4f46e5",
+        "description": "Electric Indigo for active states, links, and focus rings."
+      },
+      "background": {
+        "light": "#f8fafc",
+        "dark": "#020617",
+        "paper_light": "#ffffff",
+        "paper_dark": "#0f172a"
+      },
+      "status": {
+        "success": "#10b981",
+        "warning": "#f59e0b",
+        "error": "#e11d48",
+        "info": "#3b82f6"
+      }
+    },
+    "overrides": {
+      "css_vars": {
+        "--radius": "0.25rem",
+        "--primary": "222.2 47.4% 11.2%",
+        "--primary-foreground": "210 40% 98%",
+        "--background": "210 40% 98%",
+        "--card": "0 0% 100%",
+        "--popover": "0 0% 100%",
+        "--secondary": "210 40% 96.1%",
+        "--muted": "210 40% 96.1%",
+        "--accent": "210 40% 96.1%",
+        "--destructive": "0 84.2% 60.2%",
+        "--border": "214.3 31.8% 91.4%",
+        "--input": "214.3 31.8% 91.4%",
+        "--ring": "222.2 84% 4.9%"
+      }
+    }
+  },
+  "layout_strategy": {
+    "dashboard": {
+      "type": "Control Room Grid",
+      "grid_cols": "grid-cols-12",
+      "gap": "gap-4",
+      "padding": "p-6 md:p-8",
+      "rules": [
+        "Sidebar: Fixed width (240px), dark mode by default even in light theme for contrast.",
+        "Main Content: 'Paper' metaphor. White card on light gray background.",
+        "Widgets: Sharp corners (rounded-sm), 1px border, no shadow (flat)."
+      ]
+    },
+    "marketing_auth": {
+      "type": "Tetris Grid",
+      "rules": [
+        "Split screen for Auth: 50% Form (Clean), 50% Art (Abstract Tech).",
+        "Use 'Tracing Beam' borders on input fields for focus state."
+      ]
+    }
+  },
+  "components": {
+    "buttons": {
+      "style": "Sharp or slightly rounded (rounded-sm).",
+      "variants": {
+        "default": "bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-50 dark:text-slate-900",
+        "outline": "border-slate-200 hover:bg-slate-50 dark:border-slate-800",
+        "ghost": "hover:bg-slate-100 dark:hover:bg-slate-800"
+      }
+    },
+    "cards": {
+      "style": "Flat, Bordered, No Shadow.",
+      "classes": "border border-border bg-card text-card-foreground rounded-sm"
+    },
+    "inputs": {
+      "style": "Minimalist.",
+      "classes": "h-10 rounded-sm border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+    },
+    "wizard": {
+      "stepper": "Horizontal line with numbered nodes. Active node glows.",
+      "container": "Max width 4xl, centered, 'Paper' style shadow-lg."
+    },
+    "results_card": {
+      "structure": "Header (Status Icon + Title + Score) | Body (Details Accordion) | Footer (Actions)",
+      "status_styles": {
+        "pass": "border-l-4 border-l-emerald-500 bg-emerald-50/10",
+        "fail": "border-l-4 border-l-rose-500 bg-rose-50/10",
+        "warning": "border-l-4 border-l-amber-500 bg-amber-50/10"
+      }
+    }
+  },
+  "images": {
+    "auth_background": {
+      "url": "https://images.pexels.com/photos/8108729/pexels-photo-8108729.jpeg",
+      "alt": "Abstract Blue Geometric Data",
+      "usage": "Cover image for the right side of Login/Register pages."
+    },
+    "landing_hero": {
+      "url": "https://images.unsplash.com/photo-1652096268855-e05fe8790fb0?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHwxfHxmb29kJTIwc2FmZXR5JTIwbGFib3JhdG9yeSUyMHByb2Zlc3Npb25hbHxlbnwwfHx8fDE3Njc2MjY4NzR8MA&ixlib=rb-4.1.0&q=85",
+      "alt": "Lab Professional",
+      "usage": "Hero section or 'About' modal."
+    },
+    "placeholders": {
+      "logo": "Use a Lucide-React icon (ShieldCheck) + Text 'Nexodify'",
+      "user_avatar": "https://github.com/shadcn.png"
+    }
+  },
+  "instructions_to_main_agent": [
+    "1. SETUP: Install 'lucide-react', 'recharts', 'framer-motion', 'clsx', 'tailwind-merge' if missing.",
+    "2. THEME: Update 'index.css' with the CSS variables provided in 'colors.overrides'.",
+    "3. LAYOUT: Create a 'DashboardLayout' component with a fixed sidebar and scrollable main area.",
+    "4. AUTH: Build Login/Register pages using the 'Split Screen' pattern with the provided auth_background image.",
+    "5. WIZARD: Implement the 4-step wizard using a state machine or simple step state. Ensure data persists between steps.",
+    "6. RESULTS: Create a robust 'ComplianceCard' component that handles Pass/Fail/Warning states visually.",
+    "7. MOCK DATA: Since backend is external, create a 'mockData.js' file to simulate API responses for the dashboard and results.",
+    "8. TESTID: Add 'data-testid' to all interactive elements (buttons, inputs, cards)."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "DO NOT use gradients for backgrounds. Use solid colors or subtle noise textures.",
+    "DO NOT center text in the dashboard. Left align everything for readability.",
+    "Use 'sonner' for all toast notifications.",
+    "Ensure all forms use 'react-hook-form' + 'zod' for validation.",
+    "Keep the UI 'dry' and 'crisp'. No unnecessary decorations."
+  ]
+}
