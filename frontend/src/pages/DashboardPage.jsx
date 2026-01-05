@@ -32,6 +32,7 @@ import {
   Target,
   Activity,
 } from 'lucide-react';
+import { generateEUCheckResults, generateHalalCheckResults } from '../lib/checkDefinitions';
 
 // Verdict Badge component
 const VerdictBadge = ({ verdict, size = 'sm' }) => {
