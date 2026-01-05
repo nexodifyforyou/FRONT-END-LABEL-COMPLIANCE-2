@@ -142,9 +142,25 @@ const VerdictBadge = ({ verdict }) => {
 export default function ReportPage() {
   const { runId } = useParams();
   const navigate = useNavigate();
-  const { isAdmin, creditsDisplay } = useAuth();
+  const { isAdmin, creditsDisplay, deductCredits } = useAuth();
   const [run, setRun] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // Corrections & Re-run state
+  const [correctionsText, setCorrectionsText] = useState('');
+  const [showOverrides, setShowOverrides] = useState(false);
+  const [showAdvancedJson, setShowAdvancedJson] = useState(false);
+  const [overrideFields, setOverrideFields] = useState({
+    net_quantity: '',
+    date_marking: '',
+    fbo_name: '',
+    fbo_address: '',
+    languages: '',
+  });
+  const [advancedJson, setAdvancedJson] = useState('{}');
+  const [isRerunning, setIsRerunning] = useState(false);
+  const [rerunError, setRerunError] = useState(null);
+  const [attemptHistory, setAttemptHistory] = useState([]);
 
   // Load run data from localStorage
   useEffect(() => {
@@ -155,6 +171,26 @@ export default function ReportPage() {
         const foundRun = runs.find(r => r.run_id === runId);
         if (foundRun) {
           setRun(foundRun);
+          
+          // Load existing corrections if any
+          const corrections = JSON.parse(localStorage.getItem('ava_corrections') || '{}');
+          if (corrections[runId]) {
+            setCorrectionsText(corrections[runId].correctionsText || '');
+            if (corrections[runId].overrideFields) {
+              setOverrideFields(corrections[runId].overrideFields);
+            }
+          }
+          
+          // Load attempt history (find runs that have this run as parent)
+          const relatedRuns = runs.filter(r => r.parent_run_id === runId || r.run_id === foundRun.parent_run_id);
+          // Also include sibling runs (same parent)
+          if (foundRun.parent_run_id) {
+            const siblings = runs.filter(r => r.parent_run_id === foundRun.parent_run_id);
+            relatedRuns.push(...siblings);
+          }
+          // Unique by run_id
+          const uniqueRuns = [...new Map(relatedRuns.map(r => [r.run_id, r])).values()];
+          setAttemptHistory(uniqueRuns.sort((a, b) => new Date(b.ts) - new Date(a.ts)));
         }
       } catch (e) {
         console.error('Error loading run:', e);
@@ -162,6 +198,136 @@ export default function ReportPage() {
     }
     setLoading(false);
   }, [runId]);
+
+  // Sync override fields to advanced JSON
+  useEffect(() => {
+    const filteredFields = Object.fromEntries(
+      Object.entries(overrideFields).filter(([_, v]) => v.trim() !== '')
+    );
+    setAdvancedJson(JSON.stringify(filteredFields, null, 2));
+  }, [overrideFields]);
+
+  // Handle override field change
+  const handleOverrideChange = (field, value) => {
+    setOverrideFields(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Handle advanced JSON change
+  const handleAdvancedJsonChange = (value) => {
+    setAdvancedJson(value);
+    try {
+      const parsed = JSON.parse(value);
+      setOverrideFields(prev => ({
+        net_quantity: parsed.net_quantity || '',
+        date_marking: parsed.date_marking || '',
+        fbo_name: parsed.fbo_name || '',
+        fbo_address: parsed.fbo_address || '',
+        languages: parsed.languages || '',
+      }));
+    } catch {
+      // Invalid JSON, ignore
+    }
+  };
+
+  // Generate unique run ID
+  const generateRunId = () => {
+    const prefix = 'AVA';
+    const timestamp = Date.now().toString(36).toUpperCase();
+    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `${prefix}-${timestamp}-${random}`;
+  };
+
+  // Handle Re-run with corrections
+  const handleRerun = async () => {
+    if (!correctionsText.trim()) {
+      setRerunError('Please enter corrections text before re-running.');
+      return;
+    }
+
+    setIsRerunning(true);
+    setRerunError(null);
+
+    try {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Generate new run with corrections applied
+      const newRunId = generateRunId();
+      const euChecks = generateEUCheckResults();
+      const halalChecks = run.halal ? generateHalalCheckResults() : null;
+      
+      const allChecks = run.halal ? [...euChecks, ...halalChecks] : euChecks;
+      const criticalCount = allChecks.filter(c => c.status === 'critical').length;
+      const warningCount = allChecks.filter(c => c.status === 'warning').length;
+      const passCount = allChecks.filter(c => c.status === 'pass').length;
+      const totalChecks = allChecks.length;
+      const weightedScore = Math.round((passCount * 100 + warningCount * 60 + criticalCount * 20) / totalChecks);
+      
+      // Improved scores after corrections (simulate improvement)
+      const improvedScore = Math.min(100, weightedScore + Math.floor(Math.random() * 15) + 5);
+      
+      let verdict = 'PASS';
+      if (criticalCount > 2 || improvedScore < 60) verdict = 'FAIL';
+      else if (criticalCount > 0 || warningCount > 2 || improvedScore < 80) verdict = 'CONDITIONAL';
+
+      // Parse override fields
+      let parsedOverrides = {};
+      try {
+        parsedOverrides = JSON.parse(advancedJson);
+      } catch {
+        parsedOverrides = {};
+      }
+
+      const newRun = {
+        run_id: newRunId,
+        ts: new Date().toISOString(),
+        product_name: parsedOverrides.fbo_name || run.product_name,
+        company_name: run.company_name,
+        country_of_sale: run.country_of_sale,
+        languages_provided: parsedOverrides.languages 
+          ? parsedOverrides.languages.split(',').map(l => l.trim())
+          : run.languages_provided,
+        halal: run.halal,
+        verdict: verdict,
+        compliance_score: improvedScore,
+        evidence_confidence: Math.floor(Math.random() * 10) + 85,
+        checks: euChecks,
+        halalChecks: halalChecks,
+        pdf_type: run.halal ? 'halal' : 'eu',
+        parent_run_id: run.parent_run_id || run.run_id, // Link to original run
+        corrections_text: correctionsText,
+        override_fields: parsedOverrides,
+        is_rerun: true,
+      };
+
+      // Save to localStorage
+      const existingRuns = JSON.parse(localStorage.getItem('ava_runs') || '[]');
+      existingRuns.push(newRun);
+      localStorage.setItem('ava_runs', JSON.stringify(existingRuns));
+
+      // Save corrections for this run
+      const corrections = JSON.parse(localStorage.getItem('ava_corrections') || '{}');
+      corrections[newRunId] = {
+        correctionsText,
+        overrideFields,
+        parent_run_id: run.parent_run_id || run.run_id,
+      };
+      localStorage.setItem('ava_corrections', JSON.stringify(corrections));
+
+      // Deduct credit if not admin
+      if (!isAdmin) {
+        deductCredits(1, 'Re-run with corrections', newRunId);
+      }
+
+      // Navigate to the new report
+      navigate(`/report/${newRunId}`);
+    } catch (err) {
+      console.error('Rerun error:', err);
+      setRerunError('Failed to re-run preflight. Please try again.');
+    } finally {
+      setIsRerunning(false);
+    }
+  };
 
   const handleDownloadPdf = () => {
     const pdfPath = run?.halal ? '/sample-halal-report.pdf' : '/sample-report.pdf';
