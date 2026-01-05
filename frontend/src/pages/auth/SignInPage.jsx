@@ -7,7 +7,7 @@ const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 
 export default function SignInPage() {
   const navigate = useNavigate();
-  const { loginWithGoogle, isAuthenticated } = useAuth();
+  const { loginWithGoogle, devLogin, isAuthenticated } = useAuth();
 
   // Redirect if already authenticated
   useEffect(() => {
