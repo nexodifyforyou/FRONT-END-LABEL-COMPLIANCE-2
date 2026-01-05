@@ -286,10 +286,12 @@ export default function LandingPage() {
                     </div>
                   </div>
 
-                  <button className="mt-3 w-full flex items-center justify-center gap-1.5 py-2 bg-white/[0.04] hover:bg-white/[0.08] rounded-lg text-xs text-white/60 hover:text-white/80 transition-colors border border-white/[0.06]">
-                    <Download className="h-3 w-3" />
-                    Download PDF
-                  </button>
+                  <Link to="/sample-report" className="block mt-3">
+                    <button className="w-full flex items-center justify-center gap-1.5 py-2 bg-white/[0.04] hover:bg-white/[0.08] rounded-lg text-xs text-white/60 hover:text-white/80 transition-colors border border-white/[0.06]">
+                      <Download className="h-3 w-3" />
+                      View Full Report
+                    </button>
+                  </Link>
                 </div>
               </div>
             </motion.div>
