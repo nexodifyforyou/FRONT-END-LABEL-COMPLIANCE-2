@@ -609,13 +609,13 @@ export default function DashboardPage() {
                     <TrendingUp className="h-8 w-8 text-white/15 mx-auto mb-2" />
                     <p className="text-xs text-white/40">Example view</p>
                     <div className="flex justify-center gap-1 mt-4">
-                      {[...Array(14)].map((_, i) => (
+                      {[20, 35, 28, 42, 25, 38, 22, 45, 30, 33, 27, 40, 24, 36].map((height, i) => (
                         <div
                           key={i}
-                          className={`w-4 h-12 rounded ${
+                          className={`w-4 rounded ${
                             i % 3 === 0 ? 'bg-emerald-500/30' : i % 5 === 0 ? 'bg-rose-500/30' : 'bg-amber-500/30'
                           }`}
-                          style={{ height: `${20 + Math.random() * 30}px` }}
+                          style={{ height: `${height}px` }}
                         />
                       ))}
                     </div>
