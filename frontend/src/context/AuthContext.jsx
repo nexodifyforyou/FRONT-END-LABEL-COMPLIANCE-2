@@ -194,6 +194,7 @@ export function AuthProvider({ children }) {
     isAuthenticated: !!user,
     isAdmin,
     loginWithGoogle,
+    devLogin,
     logout,
     deductCredits,
     addCredits,
