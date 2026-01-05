@@ -78,3 +78,32 @@ Build a premium React frontend for "Nexodify AVA Label Compliance Preflight" - a
 3. Configure Nginx reverse proxy
 4. Deploy frontend build to /var/www/nexodify-app/
 5. Test end-to-end with real backend
+
+---
+
+## Landing Page Redesign (January 2025)
+
+### Changes Made
+- Complete dark theme redesign (Stripe/Linear/Vercel aesthetic)
+- EU-first positioning: Regulation (EU) 1169/2011
+- Removed all FDA references
+- Removed fake trust claims (98% accuracy, 500+ brands)
+
+### Design System Implemented
+- Background: #070A12 (page), #0B1020 (sections)
+- Surface: rgba(255,255,255,0.04) with border rgba(255,255,255,0.08)
+- Accent: #5B6CFF (indigo), #22D3EE (cyan subtle)
+- Text: 92% white headings, 72% body, 55% muted
+- Radius: 16px cards, 12px buttons
+- Typography: System fonts, H1 56px desktop/36px mobile
+
+### Sections Added
+1. Dark hero with product proof montage (dashboard + PDF preview)
+2. Feature grid (4 cards): EU checks, cross-check, evidence, PDF audit
+3. How it works (3 steps)
+4. Example findings (3 issue cards with severity)
+5. Sample PDF report preview
+6. Security & audit trail
+7. FAQ (5 expandable items)
+8. Final CTA
+9. Clean dark footer
