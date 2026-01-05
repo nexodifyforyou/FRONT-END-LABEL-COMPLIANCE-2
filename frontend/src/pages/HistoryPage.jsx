@@ -11,6 +11,14 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
+import {
   ShieldCheck,
   ArrowLeft,
   Search,
@@ -23,6 +31,7 @@ import {
   History,
   Coins,
   Filter,
+  Trash2,
 } from 'lucide-react';
 
 // Verdict Badge component
