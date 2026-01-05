@@ -122,8 +122,8 @@ def create_header(styles, subtitle="EU Label Compliance Preflight"):
     """Create page header"""
     header_data = [
         [
-            Paragraph('<font color="#5B6CFF">■</font> <b>Nexodify AVA</b>', styles['BodyText']),
-            Paragraph(f'<font size="8" color="#666666">{subtitle}</font>', styles['BodyText']),
+            Paragraph('<font color="#5B6CFF">■</font> <b>Nexodify AVA</b>', styles['BodyTextCustom']),
+            Paragraph(f'<font size="8" color="#666666">{subtitle}</font>', styles['BodyTextCustom']),
             Paragraph('<font size="8" color="#666666">Run ID: SAMPLE-AVA-0001</font>', styles['SmallText'])
         ]
     ]
@@ -185,7 +185,7 @@ def build_page1_executive_summary(styles):
     
     # Score card
     score_data = [
-        [Paragraph('<font size="36" color="#f59e0b"><b>78%</b></font>', styles['BodyText'])],
+        [Paragraph('<font size="36" color="#f59e0b"><b>78%</b></font>', styles['BodyTextCustom'])],
         [Paragraph('<font size="9" color="#666666">Compliance Score</font>', styles['SmallText'])],
         [Paragraph('<font size="8" color="#666666">Issues require attention</font>', styles['TinyText'])],
         [''],
@@ -258,13 +258,13 @@ def build_page2_findings_overview(styles):
         badge_bg = '#fef2f2' if severity == 'CRITICAL' else '#fffbeb'
         
         finding_data = [[
-            Paragraph(f'<font size="14" color="{color}">{icon}</font>', styles['BodyText']),
+            Paragraph(f'<font size="14" color="{color}">{icon}</font>', styles['BodyTextCustom']),
             Paragraph(f'''
                 <b>{title}</b><br/>
                 <font size="7" color="{color}">{severity}</font> &nbsp;
                 <font size="7" color="#2563eb">Source: {source}</font><br/>
                 <font size="8" color="#666666">{fix}</font>
-            ''', styles['BodyText'])
+            ''', styles['BodyTextCustom'])
         ]]
         finding_table = Table(finding_data, colWidths=[25, 435])
         finding_table.setStyle(TableStyle([
@@ -562,7 +562,7 @@ def build_page6_halal(styles):
         fix_text = f'<br/><font size="7" color="#92400e">Fix: {fix}</font>' if fix else ''
         
         check_data = [[
-            Paragraph(f'<font size="12" color="{color}">{icon}</font>', styles['BodyText']),
+            Paragraph(f'<font size="12" color="{color}">{icon}</font>', styles['BodyTextCustom']),
             Paragraph(f'''
                 <b>{title}</b> &nbsp;<font size="7" color="{sev_color}">{severity}</font><br/>
                 <font size="8" color="#78716c">{detail}</font>{fix_text}
