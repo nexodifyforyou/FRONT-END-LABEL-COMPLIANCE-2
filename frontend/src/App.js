@@ -11,6 +11,7 @@ import RegisterPage from "./pages/auth/RegisterPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
+import SampleReportPage from "./pages/SampleReportPage";
 import DashboardPage from "./pages/DashboardPage";
 import NewAuditPage from "./pages/audit/NewAuditPage";
 import RunHistoryPage from "./pages/runs/RunHistoryPage";
@@ -27,6 +28,7 @@ function App() {
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<LandingPage />} />
+            <Route path="/sample-report" element={<SampleReportPage />} />
             <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
             <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
