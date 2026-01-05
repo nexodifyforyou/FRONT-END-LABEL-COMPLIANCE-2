@@ -192,6 +192,54 @@ frontend:
         agent: "testing"
         comment: "✅ Auth context working perfectly. localStorage-based authentication functional. Admin email (nexodifyforyou@gmail.com) gets unlimited credits. Regular users get 10 starter credits. Logout functionality works - redirects to signin. Credit system operational."
 
+  - task: "Dashboard Density Upgrade - Dense Layout with KPIs, Table, Charts"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/DashboardPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "Implemented high-density dashboard with: left sidebar navigation, 6-tile KPI strip (Runs 7d, Runs 30d, Pass Rate, Avg Issues, Avg Runtime, Last Run), Recent Runs table, Next Actions and Getting Started cards, Compliance Radar (Pass/Fail Trend + Top Failing Checks), Alerts & Updates section. Empty states show placeholders and guided actions."
+
+  - task: "Halal Module Single Source of Truth"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/lib/checkDefinitions.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "Created checkDefinitions.js as single source of truth for all Halal check definitions. Includes HALAL_CHECK_DEFINITIONS, HALAL_SAMPLE_CHECKS, getSeverityColor, and generateHalalCheckResults functions. Used by LandingPage for sample checks and ReportPage for actual results."
+
+  - task: "Landing Page Halal Sample Checks from Shared Definitions"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/LandingPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "LandingPage now imports HALAL_SAMPLE_CHECKS from checkDefinitions.js and renders the Halal section dynamically. The 4 sample checks (Halal Certificate Provided, Certificate Expiry Valid, Gelatin Source Declaration, E-Number Source Verification) match the shared definitions."
+
+  - task: "Report Page Halal Section from Shared Definitions"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/ReportPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "ReportPage imports HALAL_CHECK_DEFINITIONS and getSeverityColor from checkDefinitions.js. When displaying a Halal run, it renders HalalCheckCard components for each check. Fallback shows all checks as 'not_evaluated' if halalChecks array is empty."
+
 metadata:
   created_by: "main_agent"
   version: "2.0"
