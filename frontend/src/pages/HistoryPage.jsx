@@ -71,6 +71,7 @@ export default function HistoryPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [verdictFilter, setVerdictFilter] = useState('all');
   const [halalFilter, setHalalFilter] = useState('all');
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   // Load runs from localStorage
   useEffect(() => {
@@ -86,6 +87,20 @@ export default function HistoryPage() {
       }
     }
   }, []);
+
+  // Delete a run
+  const handleDeleteRun = (runId) => {
+    const updatedRuns = runs.filter(run => run.run_id !== runId);
+    setRuns(updatedRuns);
+    localStorage.setItem('ava_runs', JSON.stringify(updatedRuns));
+    
+    // Also remove any corrections associated with this run
+    const corrections = JSON.parse(localStorage.getItem('ava_corrections') || '{}');
+    delete corrections[runId];
+    localStorage.setItem('ava_corrections', JSON.stringify(corrections));
+    
+    setDeleteConfirm(null);
+  };
 
   // Filter runs
   const filteredRuns = useMemo(() => {
