@@ -2,30 +2,27 @@ import "@/App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute, PublicRoute } from "./components/ProtectedRoute";
-import { Toaster } from "./components/ui/sonner";
 
-// Pages
+// Public pages
 import LandingPage from "./pages/LandingPage";
-import LoginPage from "./pages/auth/LoginPage";
-import RegisterPage from "./pages/auth/RegisterPage";
-import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
-import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
-import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
 import SampleReportPage from "./pages/SampleReportPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import TermsPage from "./pages/TermsPage";
+
+// Auth pages
+import SignInPage from "./pages/auth/SignInPage";
+
+// Protected pages
 import DashboardPage from "./pages/DashboardPage";
-import NewAuditPage from "./pages/audit/NewAuditPage";
-import RunHistoryPage from "./pages/runs/RunHistoryPage";
-import RunDetailPage from "./pages/runs/RunDetailPage";
+import RunPage from "./pages/RunPage";
+import ReportPage from "./pages/ReportPage";
+import HistoryPage from "./pages/HistoryPage";
 import BillingPage from "./pages/BillingPage";
-import SettingsPage from "./pages/SettingsPage";
-import AdminPage from "./pages/admin/AdminPage";
 
 function App() {
   return (
     <AuthProvider>
-      <div className="App">
+      <div className="app">
         <BrowserRouter>
           <Routes>
             {/* Public Routes */}
@@ -33,26 +30,22 @@ function App() {
             <Route path="/sample-report" element={<SampleReportPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/terms" element={<TermsPage />} />
-            <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-            <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/verify-email" element={<VerifyEmailPage />} />
+
+            {/* Auth Routes */}
+            <Route path="/signin" element={<PublicRoute><SignInPage /></PublicRoute>} />
+            <Route path="/login" element={<Navigate to="/signin" replace />} />
 
             {/* Protected Routes */}
             <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-            <Route path="/audit/new" element={<ProtectedRoute><NewAuditPage /></ProtectedRoute>} />
-            <Route path="/runs" element={<ProtectedRoute><RunHistoryPage /></ProtectedRoute>} />
-            <Route path="/runs/:runId" element={<ProtectedRoute><RunDetailPage /></ProtectedRoute>} />
+            <Route path="/run" element={<ProtectedRoute><RunPage /></ProtectedRoute>} />
+            <Route path="/report/:runId" element={<ProtectedRoute><ReportPage /></ProtectedRoute>} />
+            <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
             <Route path="/billing" element={<ProtectedRoute><BillingPage /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-            <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
 
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
-        <Toaster position="top-right" richColors />
       </div>
     </AuthProvider>
   );
