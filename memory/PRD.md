@@ -107,3 +107,25 @@ Build a premium React frontend for "Nexodify AVA Label Compliance Preflight" - a
 7. FAQ (5 expandable items)
 8. Final CTA
 9. Clean dark footer
+
+---
+
+## Sample Report Integration (January 2025)
+
+### What Was Built
+- Interactive sample report page at `/sample-report`
+- 6-page premium report preview matching dark UI theme
+- "View Sample Report" button on landing page wired to page
+
+### Report Structure (All 6 Pages)
+1. **Executive Summary**: Score (72%), product info, counters
+2. **Findings Overview**: 8 issues with severity/source badges
+3-4. **Evidence & Fix Details**: Deep dive with extracted text
+5. **Cross-Check Summary**: 5 matches, 3 mismatches
+6. **Next Steps & Audit Trail**: Checklist + artifact paths
+
+### Sample Data Used
+- Product: Omega-3 Capsules 1000mg
+- Company: Example Nutrition S.r.l.
+- Country: Italy
+- Score: 72% (3 Critical, 5 Warnings, 12 Passed)
