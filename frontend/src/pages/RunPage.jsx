@@ -58,37 +58,32 @@ function generateRunId() {
   return `${prefix}-${timestamp}-${random}`;
 }
 
-// Generate mock compliance data
+// Generate mock compliance data using shared definitions
 function generateMockResults(productName, companyName, halal) {
-  const score = Math.floor(Math.random() * 30) + 65; // 65-95
+  const euChecks = generateEUCheckResults();
+  const halalChecks = halal ? generateHalalCheckResults() : [];
+  
+  const allChecks = [...euChecks, ...halalChecks];
+  const criticalCount = allChecks.filter(c => c.status === 'critical').length;
+  const warningCount = allChecks.filter(c => c.status === 'warning').length;
+  const passCount = allChecks.filter(c => c.status === 'pass').length;
+  
+  // Calculate score based on check results
+  const totalChecks = allChecks.length;
+  const weightedScore = (passCount * 100 + warningCount * 60 + criticalCount * 20) / totalChecks;
+  const score = Math.round(weightedScore);
   const evidenceConfidence = Math.floor(Math.random() * 15) + 80; // 80-95
   
   let verdict = 'PASS';
-  if (score < 70) verdict = 'FAIL';
-  else if (score < 85) verdict = 'CONDITIONAL';
-  
-  const checks = [
-    { title: 'Allergen emphasis', status: Math.random() > 0.3 ? 'pass' : 'critical', source: 'Label' },
-    { title: 'QUID percentage', status: Math.random() > 0.4 ? 'pass' : 'critical', source: 'Label' },
-    { title: 'Net quantity format', status: Math.random() > 0.5 ? 'pass' : 'warning', source: 'Label' },
-    { title: 'Nutrition declaration', status: Math.random() > 0.4 ? 'pass' : 'warning', source: 'Label' },
-    { title: 'Storage conditions', status: Math.random() > 0.5 ? 'pass' : 'warning', source: 'TDS' },
-    { title: 'Operator address', status: Math.random() > 0.6 ? 'pass' : 'warning', source: 'Label' },
-  ];
-  
-  if (halal) {
-    checks.push(
-      { title: 'Halal certificate', status: Math.random() > 0.5 ? 'pass' : 'critical', source: 'Input' },
-      { title: 'Animal-derived ingredients', status: Math.random() > 0.4 ? 'pass' : 'warning', source: 'TDS' },
-      { title: 'Cross-contamination', status: Math.random() > 0.5 ? 'pass' : 'warning', source: 'TDS' },
-    );
-  }
+  if (criticalCount > 2 || score < 60) verdict = 'FAIL';
+  else if (criticalCount > 0 || warningCount > 2 || score < 80) verdict = 'CONDITIONAL';
   
   return {
     verdict,
     compliance_score: score,
     evidence_confidence: evidenceConfidence,
-    checks,
+    checks: euChecks,
+    halalChecks: halal ? halalChecks : null,
   };
 }
 
