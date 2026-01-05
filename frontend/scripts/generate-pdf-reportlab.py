@@ -77,7 +77,7 @@ def create_styles():
     ))
     
     styles.add(ParagraphStyle(
-        name='BodyText',
+        name='BodyTextCustom',
         fontName='Helvetica',
         fontSize=10,
         textColor=DARK_BG,
