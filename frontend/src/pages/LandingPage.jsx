@@ -426,26 +426,25 @@ export default function LandingPage() {
                 </span>
               </div>
               <div className="space-y-3">
-                {[
-                  { title: 'Halal Certificate Provided', status: 'pass', severity: 'low' },
-                  { title: 'Certificate Expiry Valid', status: 'warning', severity: 'medium' },
-                  { title: 'Gelatin Source Declaration', status: 'fail', severity: 'high' },
-                  { title: 'E-Number Source Verification', status: 'warning', severity: 'medium' },
-                ].map((check, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-white/[0.02] border border-white/[0.06] rounded-lg">
-                    <div className="flex items-center gap-2">
-                      {check.status === 'pass' ? (
-                        <CheckCircle className="h-4 w-4 text-emerald-400" />
-                      ) : check.status === 'warning' ? (
-                        <AlertTriangle className="h-4 w-4 text-amber-400" />
-                      ) : (
-                        <XCircle className="h-4 w-4 text-rose-400" />
-                      )}
-                      <span className="text-white/80 text-sm">{check.title}</span>
+                {/* Using shared HALAL_SAMPLE_CHECKS for consistency */}
+                {HALAL_SAMPLE_CHECKS.map((check, i) => {
+                  const colors = getSeverityColor(check.sampleResult);
+                  return (
+                    <div key={i} className="flex items-center justify-between p-3 bg-white/[0.02] border border-white/[0.06] rounded-lg">
+                      <div className="flex items-center gap-2">
+                        {check.sampleResult === 'pass' ? (
+                          <CheckCircle className="h-4 w-4 text-emerald-400" />
+                        ) : check.sampleResult === 'warning' ? (
+                          <AlertTriangle className="h-4 w-4 text-amber-400" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-rose-400" />
+                        )}
+                        <span className="text-white/80 text-sm">{check.title}</span>
+                      </div>
+                      <SeverityBadge level={check.sampleResult} />
                     </div>
-                    <SeverityBadge level={check.severity} />
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               <p className="mt-4 text-white/40 text-xs">
                 Halal determinations depend on target market and certification body. This module provides preflight risk flags, not certification.
