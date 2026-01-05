@@ -260,11 +260,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Dashboard Density Upgrade - verify new dense layout with KPIs, table, charts"
-    - "Halal Module Consistency - verify Landing page sample checks match Report page Halal section"
-    - "Empty state handling in new dashboard"
-    - "Run Sample Demo functionality"
-  stuck_tasks: []
+    - "Report Page Halal Section - fix missing 7 Halal checks from shared definitions"
+  stuck_tasks: 
+    - "Report Page Halal Section from Shared Definitions"
   test_all: false
   test_priority: "high_first"
 
@@ -275,3 +273,5 @@ agent_communication:
     message: "✅ COMPREHENSIVE TESTING COMPLETE - All major functionality working correctly. Tested complete user flow: public routes, auth redirection, admin/regular user scenarios, dashboard cards, run wizard with validation, report page with mock data, history with search, billing with credit system, logout, and mobile responsiveness. Only minor issue: dropdown overlay interactions in run wizard, but core functionality intact. Ready for production."
   - agent: "main"
     message: "Implemented Dashboard Density Upgrade and Halal Module Consistency Fix. Please test: 1) NEW DASHBOARD: Login and verify new dense layout with left sidebar, 6-tile KPI strip, Recent Runs table, Next Actions card, Getting Started checklist, and Compliance Radar charts. 2) EMPTY STATE: Verify dashboard shows placeholders and 'Run Sample Demo' CTA when no runs exist. 3) HALAL MODULE ON LANDING: Scroll to Halal section on landing page - verify 4 sample checks (Certificate Provided/Pass, Certificate Expiry/Medium, Gelatin Source/High, E-Number/Medium). 4) HALAL RUN FLOW: Use Run wizard with Halal enabled, then verify Report page shows all 10 Halal checks from shared definitions. 5) CONSISTENCY CHECK: Compare Halal check titles between landing page samples and report page - they should match exactly from checkDefinitions.js."
+  - agent: "testing"
+    message: "✅ DASHBOARD DENSITY UPGRADE TESTING COMPLETE - All features working perfectly: Left sidebar navigation (5 links), 6-tile KPI strip, Recent Runs table (6 columns), empty state handling, Next Actions card, Getting Started checklist, Compliance Radar charts, Alerts & Updates. 'Run Sample Demo' functionality working. ✅ HALAL MODULE CONSISTENCY PARTIALLY WORKING - Landing page shows all 4 sample checks correctly. ❌ CRITICAL ISSUE: Report page only shows 3/10 Halal checks from shared definitions, missing 7 checks including 'E-Number Source Verification' which breaks consistency. The fallback logic to display all 10 checks when halalChecks array is empty is not working. Need main agent to fix ReportPage.jsx to properly display all HALAL_CHECK_DEFINITIONS."
