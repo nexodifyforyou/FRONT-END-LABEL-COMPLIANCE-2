@@ -50,43 +50,6 @@ const EU_LANGUAGES = [
   'Latvian', 'Estonian', 'Maltese', 'Irish',
 ];
 
-// Generate unique run ID
-function generateRunId() {
-  const prefix = 'AVA';
-  const timestamp = Date.now().toString(36).toUpperCase();
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `${prefix}-${timestamp}-${random}`;
-}
-
-// Generate mock compliance data using shared definitions
-function generateMockResults(productName, companyName, halal) {
-  const euChecks = generateEUCheckResults();
-  const halalChecks = halal ? generateHalalCheckResults() : [];
-  
-  const allChecks = [...euChecks, ...halalChecks];
-  const criticalCount = allChecks.filter(c => c.status === 'critical').length;
-  const warningCount = allChecks.filter(c => c.status === 'warning').length;
-  const passCount = allChecks.filter(c => c.status === 'pass').length;
-  
-  // Calculate score based on check results
-  const totalChecks = allChecks.length;
-  const weightedScore = (passCount * 100 + warningCount * 60 + criticalCount * 20) / totalChecks;
-  const score = Math.round(weightedScore);
-  const evidenceConfidence = Math.floor(Math.random() * 15) + 80; // 80-95
-  
-  let verdict = 'PASS';
-  if (criticalCount > 2 || score < 60) verdict = 'FAIL';
-  else if (criticalCount > 0 || warningCount > 2 || score < 80) verdict = 'CONDITIONAL';
-  
-  return {
-    verdict,
-    compliance_score: score,
-    evidence_confidence: evidenceConfidence,
-    checks: euChecks,
-    halalChecks: halal ? halalChecks : null,
-  };
-}
-
 export default function RunPage() {
   const navigate = useNavigate();
   const { user, credits, creditsDisplay, isAdmin, hasEnoughCredits, deductCredits } = useAuth();
