@@ -32,7 +32,9 @@ import {
   Coins,
   Filter,
   Trash2,
+  Loader2,
 } from 'lucide-react';
+import { runAPI, API_BASE_URL } from '../lib/api';
 
 // Verdict Badge component
 const VerdictBadge = ({ verdict }) => {
