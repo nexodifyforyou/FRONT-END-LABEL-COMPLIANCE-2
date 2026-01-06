@@ -141,14 +141,36 @@ export default function DashboardPage() {
     downloadPdf: false,
     saveTemplate: false,
   });
+  const [loadingRuns, setLoadingRuns] = useState(true);
+  const [backendStatus, setBackendStatus] = useState('unknown'); // 'unknown', 'checking', 'online', 'offline'
 
-  // Load runs from localStorage
+  // Check backend health
+  const checkBackendHealth = async () => {
+    setBackendStatus('checking');
+    try {
+      const response = await healthCheck();
+      if (response.ok || response.status === 'ok') {
+        setBackendStatus('online');
+        return true;
+      }
+      setBackendStatus('offline');
+      return false;
+    } catch (error) {
+      console.error('Health check failed:', error);
+      setBackendStatus('offline');
+      return false;
+    }
+  };
+
+  // Load runs from backend API
   useEffect(() => {
-    const storedRuns = localStorage.getItem('ava_runs');
-    if (storedRuns) {
+    const fetchRuns = async () => {
+      setLoadingRuns(true);
       try {
-        const allRuns = JSON.parse(storedRuns);
-        const sortedRuns = allRuns.sort((a, b) => new Date(b.ts) - new Date(a.ts));
+        const response = await runAPI.list();
+        // Handle both array response and object with runs array
+        const runsData = Array.isArray(response) ? response : (response.runs || []);
+        const sortedRuns = runsData.sort((a, b) => new Date(b.ts || b.created_at) - new Date(a.ts || a.created_at));
         setRuns(sortedRuns);
         
         // Auto-check checklist items based on runs
@@ -161,10 +183,17 @@ export default function DashboardPage() {
             runPreflight: true,
           }));
         }
-      } catch (e) {
-        console.error('Error loading runs:', e);
+      } catch (error) {
+        console.error('Error loading runs:', error);
+        // If API fails, backend might be down
+        setBackendStatus('offline');
+      } finally {
+        setLoadingRuns(false);
       }
-    }
+    };
+
+    // Check health first, then fetch runs
+    checkBackendHealth().then(() => fetchRuns());
     
     // Load checklist from localStorage
     const storedChecklist = localStorage.getItem('ava_checklist');
