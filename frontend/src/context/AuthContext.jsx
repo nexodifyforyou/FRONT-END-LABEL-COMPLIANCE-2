@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { authAPI, setAuthToken, getAuthToken, removeAuthToken } from '../lib/api';
 
 const AuthContext = createContext(null);
 
@@ -22,6 +23,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [wallet, setWallet] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState(null);
 
   // Check if user is admin
   const isAdmin = user?.email === ADMIN_EMAIL;
@@ -34,11 +36,13 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const storedAuth = localStorage.getItem('ava_auth');
     const storedWallet = localStorage.getItem('ava_wallet');
+    const storedToken = getAuthToken();
     
-    if (storedAuth) {
+    if (storedAuth && storedToken) {
       try {
         const authData = JSON.parse(storedAuth);
         setUser(authData);
+        setToken(storedToken);
         
         // Load or create wallet
         if (storedWallet) {
@@ -51,12 +55,13 @@ export function AuthProvider({ children }) {
       } catch (e) {
         console.error('Error parsing auth data:', e);
         localStorage.removeItem('ava_auth');
+        removeAuthToken();
       }
     }
     setLoading(false);
   }, []);
 
-  // Google login handler
+  // Google login handler (kept for compatibility)
   const loginWithGoogle = useCallback((credential) => {
     // Decode JWT from Google
     const payload = JSON.parse(atob(credential.split('.')[1]));
@@ -90,21 +95,38 @@ export function AuthProvider({ children }) {
   // Logout
   const logout = useCallback(() => {
     localStorage.removeItem('ava_auth');
-    // Keep wallet data for when user logs back in
+    removeAuthToken();
     setUser(null);
+    setToken(null);
   }, []);
 
-  // Dev login (for testing)
-  const devLogin = useCallback((authData, walletData = null) => {
-    localStorage.setItem('ava_auth', JSON.stringify(authData));
-    setUser(authData);
-    
-    // Handle wallet for non-admin users
-    if (authData.email !== ADMIN_EMAIL) {
-      if (walletData) {
-        localStorage.setItem('ava_wallet', JSON.stringify(walletData));
-        setWallet(walletData);
-      } else {
+  // Dev login - calls real backend API
+  const devLogin = useCallback(async (email) => {
+    try {
+      // Call backend dev-login endpoint
+      const response = await authAPI.devLogin(email);
+      
+      // Store the token
+      if (response.token) {
+        setAuthToken(response.token);
+        setToken(response.token);
+      }
+      
+      // Create auth data from response or email
+      const authData = {
+        provider: 'dev',
+        email: response.email || email,
+        name: response.name || email.split('@')[0],
+        picture: response.picture || '',
+        iat: new Date().toISOString(),
+        user_id: response.user_id,
+      };
+      
+      localStorage.setItem('ava_auth', JSON.stringify(authData));
+      setUser(authData);
+      
+      // Handle wallet for non-admin users
+      if (authData.email !== ADMIN_EMAIL) {
         const existingWallet = localStorage.getItem('ava_wallet');
         if (existingWallet) {
           setWallet(JSON.parse(existingWallet));
@@ -114,9 +136,12 @@ export function AuthProvider({ children }) {
           setWallet(newWallet);
         }
       }
+      
+      return { success: true, token: response.token };
+    } catch (error) {
+      console.error('Dev login error:', error);
+      throw error;
     }
-    
-    return { success: true };
   }, []);
 
   // Deduct credits
