@@ -334,34 +334,6 @@ export default function ReportPage() {
       return dateStr;
     }
   };
-      
-      // Download the PDF
-      const response = await fetch(pdfUrl, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('ava_token')}`,
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to download PDF');
-      }
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${run?.run_id || 'report'}-report.pdf`;
-      link.click();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('PDF download error:', error);
-      // Fallback to direct link if fetch fails
-      const pdfUrl = run?.files?.pdf 
-        ? `${API_BASE_URL}${run.files.pdf}`
-        : runAPI.getPdfUrl(runId);
-      window.open(pdfUrl, '_blank');
-    }
-  };
 
   if (loading) {
     return (
