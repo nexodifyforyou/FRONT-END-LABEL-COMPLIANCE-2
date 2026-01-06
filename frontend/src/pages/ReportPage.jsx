@@ -5,7 +5,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShieldCheck,
   ArrowLeft,
@@ -38,9 +38,46 @@ import {
   Clock,
   History,
   Code,
+  MessageSquare,
+  Plus,
+  X,
 } from 'lucide-react';
 import { getSeverityColor, HALAL_CHECK_DEFINITIONS } from '../lib/checkDefinitions';
 import { runAPI, API_BASE_URL } from '../lib/api';
+
+// ============================================================================
+// TOAST NOTIFICATION COMPONENT
+// Simple toast for showing success/error messages after corrections
+// ============================================================================
+const Toast = ({ message, type = 'success', onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 4000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 50 }}
+      className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 ${
+        type === 'success' 
+          ? 'bg-emerald-500/90 text-white' 
+          : 'bg-rose-500/90 text-white'
+      }`}
+    >
+      {type === 'success' ? (
+        <CheckCircle className="h-5 w-5" />
+      ) : (
+        <XCircle className="h-5 w-5" />
+      )}
+      <span className="text-sm font-medium">{message}</span>
+      <button onClick={onClose} className="ml-2 hover:opacity-70">
+        <X className="h-4 w-4" />
+      </button>
+    </motion.div>
+  );
+};
 
 // Severity Badge - uses shared severity colors
 const SeverityBadge = ({ level }) => {
