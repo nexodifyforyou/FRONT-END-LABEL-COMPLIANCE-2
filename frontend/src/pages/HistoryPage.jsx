@@ -213,6 +213,32 @@ export default function HistoryPage() {
           <p className="text-white/50 mt-1">View and manage all your compliance preflight runs</p>
         </div>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-16">
+            <Loader2 className="h-8 w-8 text-[#5B6CFF] animate-spin mb-4" />
+            <p className="text-white/50">Loading run history...</p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {loadError && !loading && (
+          <div className="flex flex-col items-center justify-center py-16">
+            <XCircle className="h-12 w-12 text-rose-400 mb-4" />
+            <h2 className="text-lg font-semibold text-white/90 mb-2">Failed to Load History</h2>
+            <p className="text-white/50 mb-4">{loadError}</p>
+            <Button 
+              onClick={() => window.location.reload()} 
+              className="bg-[#5B6CFF] hover:bg-[#4A5BEE]"
+            >
+              Try Again
+            </Button>
+          </div>
+        )}
+
+        {/* Content when not loading and no error */}
+        {!loading && !loadError && (
+          <>
         {/* Filters */}
         <div className="mb-6 flex flex-col sm:flex-row gap-4">
           {/* Search */}
