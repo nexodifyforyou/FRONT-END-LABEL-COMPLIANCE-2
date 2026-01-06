@@ -185,41 +185,31 @@ export default function ReportPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   
-  // Corrections & Re-run state
+  // ============================================================================
+  // CORRECTIONS LOOP STATE
+  // Manages the corrections form and displays previous corrections from API
+  // ============================================================================
   const [correctionsText, setCorrectionsText] = useState('');
+  const [languagesOverride, setLanguagesOverride] = useState(''); // Comma-separated languages
   const [showOverrides, setShowOverrides] = useState(false);
-  const [showAdvancedJson, setShowAdvancedJson] = useState(false);
-  const [overrideFields, setOverrideFields] = useState({
-    net_quantity: '',
-    date_marking: '',
-    fbo_name: '',
-    fbo_address: '',
-    languages: '',
-  });
-  const [advancedJson, setAdvancedJson] = useState('{}');
-  const [isRerunning, setIsRerunning] = useState(false);
-  const [rerunError, setRerunError] = useState(null);
-  const [attemptHistory, setAttemptHistory] = useState([]);
+  const [isApplyingCorrections, setIsApplyingCorrections] = useState(false);
+  const [correctionsError, setCorrectionsError] = useState(null);
+  const [showCorrectionsPanel, setShowCorrectionsPanel] = useState(true);
+  
+  // Toast notification state
+  const [toast, setToast] = useState(null);
 
-  // Load run data from backend API
+  // ============================================================================
+  // FETCH REPORT DATA
+  // Loads report.json from backend, includes corrections array if present
+  // ============================================================================
   useEffect(() => {
     const fetchReport = async () => {
       setLoading(true);
       setLoadError(null);
       try {
-        // Fetch report from backend API
         const reportData = await runAPI.getReport(runId);
         setRun(reportData);
-        
-        // Load existing corrections text from report if present
-        if (reportData.corrections_text) {
-          setCorrectionsText(reportData.corrections_text);
-        }
-        
-        // Set attempt history from corrections_history if available
-        if (reportData.corrections_history && Array.isArray(reportData.corrections_history)) {
-          setAttemptHistory(reportData.corrections_history);
-        }
       } catch (error) {
         console.error('Error loading report:', error);
         setLoadError(error.message || 'Failed to load report');
@@ -233,88 +223,117 @@ export default function ReportPage() {
     }
   }, [runId]);
 
-  // Sync override fields to advanced JSON
-  useEffect(() => {
-    const filteredFields = Object.fromEntries(
-      Object.entries(overrideFields).filter(([_, v]) => v.trim() !== '')
-    );
-    setAdvancedJson(JSON.stringify(filteredFields, null, 2));
-  }, [overrideFields]);
-
-  // Handle override field change
-  const handleOverrideChange = (field, value) => {
-    setOverrideFields(prev => ({ ...prev, [field]: value }));
-  };
-
-  // Handle advanced JSON change
-  const handleAdvancedJsonChange = (value) => {
-    setAdvancedJson(value);
-    try {
-      const parsed = JSON.parse(value);
-      setOverrideFields(prev => ({
-        net_quantity: parsed.net_quantity || '',
-        date_marking: parsed.date_marking || '',
-        fbo_name: parsed.fbo_name || '',
-        fbo_address: parsed.fbo_address || '',
-        languages: parsed.languages || '',
-      }));
-    } catch {
-      // Invalid JSON, ignore
-    }
-  };
-
-  // Handle Re-run with corrections - calls real backend API
-  const handleRerun = async () => {
-    if (!correctionsText.trim()) {
-      setRerunError('Please enter corrections text before re-running.');
+  // ============================================================================
+  // APPLY CORRECTIONS HANDLER
+  // POST /api/runs/:run_id/corrections then refetch report.json
+  // ============================================================================
+  const handleApplyCorrections = async () => {
+    // Validation: corrections_text required, min 3 chars
+    if (!correctionsText.trim() || correctionsText.trim().length < 3) {
+      setCorrectionsError('Please enter at least 3 characters describing the corrections needed.');
       return;
     }
 
-    setIsRerunning(true);
-    setRerunError(null);
+    setIsApplyingCorrections(true);
+    setCorrectionsError(null);
 
     try {
+      // Build override_fields JSON (only languages_provided for now)
+      const overrideFields = {};
+      if (languagesOverride.trim()) {
+        overrideFields.languages_provided = languagesOverride
+          .split(',')
+          .map(lang => lang.trim())
+          .filter(lang => lang.length > 0);
+      }
+      const overrideFieldsJson = Object.keys(overrideFields).length > 0 
+        ? JSON.stringify(overrideFields) 
+        : '{}';
+
       // Call backend corrections endpoint
-      await runAPI.submitCorrections(runId, correctionsText, advancedJson);
+      await runAPI.submitCorrections(runId, correctionsText.trim(), overrideFieldsJson);
       
-      // Refresh report data to get updated corrections history
+      // Immediately refetch report.json to get updated data with new correction
       const updatedReport = await runAPI.getReport(runId);
       setRun(updatedReport);
       
-      // Update attempt history if present
-      if (updatedReport.corrections_history && Array.isArray(updatedReport.corrections_history)) {
-        setAttemptHistory(updatedReport.corrections_history);
-      }
+      // Clear the form
+      setCorrectionsText('');
+      setLanguagesOverride('');
+      setShowOverrides(false);
+      
+      // Show success toast
+      setToast({ message: 'Corrections applied — report updated', type: 'success' });
       
       // Deduct credit if not admin
       if (!isAdmin) {
-        deductCredits(1, 'Re-run with corrections', runId);
+        deductCredits(1, 'Corrections applied', runId);
       }
-
-      // Clear corrections text after successful submission
-      setCorrectionsText('');
-      setOverrideFields({
-        net_quantity: '',
-        date_marking: '',
-        fbo_name: '',
-        fbo_address: '',
-        languages: '',
-      });
     } catch (err) {
-      console.error('Rerun error:', err);
-      setRerunError(err.message || 'Failed to re-run preflight. Please try again.');
+      console.error('Apply corrections error:', err);
+      setCorrectionsError(err.message || 'Failed to apply corrections. Please try again.');
+      setToast({ message: 'Failed to apply corrections', type: 'error' });
     } finally {
-      setIsRerunning(false);
+      setIsApplyingCorrections(false);
     }
   };
 
-  // Download PDF from backend
+  // ============================================================================
+  // PDF DOWNLOAD WITH CACHE-BUSTER
+  // Adds timestamp query param to ensure latest PDF is downloaded after corrections
+  // ============================================================================
   const handleDownloadPdf = async () => {
     try {
-      // Get PDF URL from run data or construct default
-      const pdfUrl = run?.files?.pdf 
+      // Build PDF URL with cache-buster to ensure fresh download after corrections
+      const cacheBuster = `?t=${Date.now()}`;
+      const basePdfUrl = run?.files?.pdf 
         ? `${API_BASE_URL}${run.files.pdf}`
         : runAPI.getPdfUrl(runId);
+      const pdfUrl = `${basePdfUrl}${cacheBuster}`;
+      
+      const response = await fetch(pdfUrl, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('ava_token')}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to download PDF');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${run?.run_id || 'report'}-report.pdf`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('PDF download error:', error);
+      // Fallback to direct link with cache-buster
+      const cacheBuster = `?t=${Date.now()}`;
+      const pdfUrl = run?.files?.pdf 
+        ? `${API_BASE_URL}${run.files.pdf}${cacheBuster}`
+        : `${runAPI.getPdfUrl(runId)}${cacheBuster}`;
+      window.open(pdfUrl, '_blank');
+    }
+  };
+
+  // Format date for corrections display
+  const formatCorrectionDate = (dateStr) => {
+    if (!dateStr) return 'Unknown date';
+    try {
+      return new Date(dateStr).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return dateStr;
+    }
+  };
       
       // Download the PDF
       const response = await fetch(pdfUrl, {
