@@ -146,6 +146,7 @@ export default function ReportPage() {
   const { isAdmin, creditsDisplay, deductCredits } = useAuth();
   const [run, setRun] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   
   // Corrections & Re-run state
   const [correctionsText, setCorrectionsText] = useState('');
@@ -163,41 +164,36 @@ export default function ReportPage() {
   const [rerunError, setRerunError] = useState(null);
   const [attemptHistory, setAttemptHistory] = useState([]);
 
-  // Load run data from localStorage
+  // Load run data from backend API
   useEffect(() => {
-    const storedRuns = localStorage.getItem('ava_runs');
-    if (storedRuns) {
+    const fetchReport = async () => {
+      setLoading(true);
+      setLoadError(null);
       try {
-        const runs = JSON.parse(storedRuns);
-        const foundRun = runs.find(r => r.run_id === runId);
-        if (foundRun) {
-          setRun(foundRun);
-          
-          // Load existing corrections if any
-          const corrections = JSON.parse(localStorage.getItem('ava_corrections') || '{}');
-          if (corrections[runId]) {
-            setCorrectionsText(corrections[runId].correctionsText || '');
-            if (corrections[runId].overrideFields) {
-              setOverrideFields(corrections[runId].overrideFields);
-            }
-          }
-          
-          // Load attempt history (find runs that have this run as parent)
-          const relatedRuns = runs.filter(r => r.parent_run_id === runId || r.run_id === foundRun.parent_run_id);
-          // Also include sibling runs (same parent)
-          if (foundRun.parent_run_id) {
-            const siblings = runs.filter(r => r.parent_run_id === foundRun.parent_run_id);
-            relatedRuns.push(...siblings);
-          }
-          // Unique by run_id
-          const uniqueRuns = [...new Map(relatedRuns.map(r => [r.run_id, r])).values()];
-          setAttemptHistory(uniqueRuns.sort((a, b) => new Date(b.ts) - new Date(a.ts)));
+        // Fetch report from backend API
+        const reportData = await runAPI.getReport(runId);
+        setRun(reportData);
+        
+        // Load existing corrections text from report if present
+        if (reportData.corrections_text) {
+          setCorrectionsText(reportData.corrections_text);
         }
-      } catch (e) {
-        console.error('Error loading run:', e);
+        
+        // Set attempt history from corrections_history if available
+        if (reportData.corrections_history && Array.isArray(reportData.corrections_history)) {
+          setAttemptHistory(reportData.corrections_history);
+        }
+      } catch (error) {
+        console.error('Error loading report:', error);
+        setLoadError(error.message || 'Failed to load report');
+      } finally {
+        setLoading(false);
       }
+    };
+
+    if (runId) {
+      fetchReport();
     }
-    setLoading(false);
   }, [runId]);
 
   // Sync override fields to advanced JSON
@@ -230,15 +226,7 @@ export default function ReportPage() {
     }
   };
 
-  // Generate unique run ID
-  const generateRunId = () => {
-    const prefix = 'AVA';
-    const timestamp = Date.now().toString(36).toUpperCase();
-    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-    return `${prefix}-${timestamp}-${random}`;
-  };
-
-  // Handle Re-run with corrections
+  // Handle Re-run with corrections - calls real backend API
   const handleRerun = async () => {
     if (!correctionsText.trim()) {
       setRerunError('Please enter corrections text before re-running.');
@@ -249,93 +237,74 @@ export default function ReportPage() {
     setRerunError(null);
 
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Generate new run with corrections applied
-      const newRunId = generateRunId();
-      const euChecks = generateEUCheckResults();
-      const halalChecks = run.halal ? generateHalalCheckResults() : null;
+      // Call backend corrections endpoint
+      await runAPI.submitCorrections(runId, correctionsText, advancedJson);
       
-      const allChecks = run.halal ? [...euChecks, ...halalChecks] : euChecks;
-      const criticalCount = allChecks.filter(c => c.status === 'critical').length;
-      const warningCount = allChecks.filter(c => c.status === 'warning').length;
-      const passCount = allChecks.filter(c => c.status === 'pass').length;
-      const totalChecks = allChecks.length;
-      const weightedScore = Math.round((passCount * 100 + warningCount * 60 + criticalCount * 20) / totalChecks);
+      // Refresh report data to get updated corrections history
+      const updatedReport = await runAPI.getReport(runId);
+      setRun(updatedReport);
       
-      // Improved scores after corrections (simulate improvement)
-      const improvedScore = Math.min(100, weightedScore + Math.floor(Math.random() * 15) + 5);
-      
-      let verdict = 'PASS';
-      if (criticalCount > 2 || improvedScore < 60) verdict = 'FAIL';
-      else if (criticalCount > 0 || warningCount > 2 || improvedScore < 80) verdict = 'CONDITIONAL';
-
-      // Parse override fields
-      let parsedOverrides = {};
-      try {
-        parsedOverrides = JSON.parse(advancedJson);
-      } catch {
-        parsedOverrides = {};
+      // Update attempt history if present
+      if (updatedReport.corrections_history && Array.isArray(updatedReport.corrections_history)) {
+        setAttemptHistory(updatedReport.corrections_history);
       }
-
-      const newRun = {
-        run_id: newRunId,
-        ts: new Date().toISOString(),
-        product_name: parsedOverrides.fbo_name || run.product_name,
-        company_name: run.company_name,
-        country_of_sale: run.country_of_sale,
-        languages_provided: parsedOverrides.languages 
-          ? parsedOverrides.languages.split(',').map(l => l.trim())
-          : run.languages_provided,
-        halal: run.halal,
-        verdict: verdict,
-        compliance_score: improvedScore,
-        evidence_confidence: Math.floor(Math.random() * 10) + 85,
-        checks: euChecks,
-        halalChecks: halalChecks,
-        pdf_type: run.halal ? 'halal' : 'eu',
-        parent_run_id: run.parent_run_id || run.run_id, // Link to original run
-        corrections_text: correctionsText,
-        override_fields: parsedOverrides,
-        is_rerun: true,
-      };
-
-      // Save to localStorage
-      const existingRuns = JSON.parse(localStorage.getItem('ava_runs') || '[]');
-      existingRuns.push(newRun);
-      localStorage.setItem('ava_runs', JSON.stringify(existingRuns));
-
-      // Save corrections for this run
-      const corrections = JSON.parse(localStorage.getItem('ava_corrections') || '{}');
-      corrections[newRunId] = {
-        correctionsText,
-        overrideFields,
-        parent_run_id: run.parent_run_id || run.run_id,
-      };
-      localStorage.setItem('ava_corrections', JSON.stringify(corrections));
-
+      
       // Deduct credit if not admin
       if (!isAdmin) {
-        deductCredits(1, 'Re-run with corrections', newRunId);
+        deductCredits(1, 'Re-run with corrections', runId);
       }
 
-      // Navigate to the new report
-      navigate(`/report/${newRunId}`);
+      // Clear corrections text after successful submission
+      setCorrectionsText('');
+      setOverrideFields({
+        net_quantity: '',
+        date_marking: '',
+        fbo_name: '',
+        fbo_address: '',
+        languages: '',
+      });
     } catch (err) {
       console.error('Rerun error:', err);
-      setRerunError('Failed to re-run preflight. Please try again.');
+      setRerunError(err.message || 'Failed to re-run preflight. Please try again.');
     } finally {
       setIsRerunning(false);
     }
   };
 
-  const handleDownloadPdf = () => {
-    const pdfPath = run?.halal ? '/sample-halal-report.pdf' : '/sample-report.pdf';
-    const link = document.createElement('a');
-    link.href = pdfPath;
-    link.download = `${run?.run_id || 'report'}-report.pdf`;
-    link.click();
+  // Download PDF from backend
+  const handleDownloadPdf = async () => {
+    try {
+      // Get PDF URL from run data or construct default
+      const pdfUrl = run?.files?.pdf 
+        ? `${API_BASE_URL}${run.files.pdf}`
+        : runAPI.getPdfUrl(runId);
+      
+      // Download the PDF
+      const response = await fetch(pdfUrl, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('ava_token')}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to download PDF');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${run?.run_id || 'report'}-report.pdf`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('PDF download error:', error);
+      // Fallback to direct link if fetch fails
+      const pdfUrl = run?.files?.pdf 
+        ? `${API_BASE_URL}${run.files.pdf}`
+        : runAPI.getPdfUrl(runId);
+      window.open(pdfUrl, '_blank');
+    }
   };
 
   if (loading) {
