@@ -394,10 +394,35 @@ export default function DashboardPage() {
               <h1 className="text-xl font-semibold text-white/95">Dashboard</h1>
               <p className="text-sm text-white/40">Welcome back{user?.name ? `, ${user.name.split(' ')[0]}` : ''}</p>
             </div>
-            <Button onClick={() => navigate('/run')} className="bg-[#5B6CFF] hover:bg-[#4A5BEE] rounded-xl">
-              <Plus className="mr-2 h-4 w-4" />
-              New Run
-            </Button>
+            <div className="flex items-center gap-3">
+              {/* Backend Status */}
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.02] border border-white/[0.08] rounded-full">
+                <div className={`h-2 w-2 rounded-full ${
+                  backendStatus === 'online' ? 'bg-emerald-400' :
+                  backendStatus === 'offline' ? 'bg-rose-400' :
+                  backendStatus === 'checking' ? 'bg-amber-400 animate-pulse' :
+                  'bg-white/30'
+                }`} />
+                <span className="text-xs text-white/60">
+                  {backendStatus === 'online' ? 'Backend Online' :
+                   backendStatus === 'offline' ? 'Backend Offline' :
+                   backendStatus === 'checking' ? 'Checking...' :
+                   'Unknown'}
+                </span>
+                {backendStatus === 'offline' && (
+                  <button 
+                    onClick={checkBackendHealth}
+                    className="text-[#5B6CFF] hover:text-[#4A5BEE] text-xs ml-1"
+                  >
+                    Retry
+                  </button>
+                )}
+              </div>
+              <Button onClick={() => navigate('/run')} className="bg-[#5B6CFF] hover:bg-[#4A5BEE] rounded-xl">
+                <Plus className="mr-2 h-4 w-4" />
+                New Run
+              </Button>
+            </div>
           </div>
         </header>
 
