@@ -111,48 +111,69 @@ export default function SignInPage() {
                   <span className="px-2 bg-[#0a0d14] text-white/40">Or for testing</span>
                 </div>
               </div>
+
+              {/* Login Error */}
+              {loginError && (
+                <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-rose-400 flex-shrink-0" />
+                  <span className="text-rose-400 text-sm">{loginError}</span>
+                </div>
+              )}
               
               <button
-                onClick={() => {
-                  // Simulate admin login using devLogin from AuthContext
-                  const adminAuth = {
-                    provider: 'google',
-                    email: 'nexodifyforyou@gmail.com',
-                    name: 'Nexodify Admin',
-                    picture: '',
-                    iat: new Date().toISOString()
-                  };
-                  devLogin(adminAuth);
-                  navigate('/dashboard');
+                onClick={async () => {
+                  setIsLoggingIn(true);
+                  setLoginError(null);
+                  try {
+                    // Call real backend dev-login API
+                    await devLogin('nexodifyforyou@gmail.com');
+                    navigate('/dashboard');
+                  } catch (error) {
+                    console.error('Login error:', error);
+                    setLoginError(error.message || 'Failed to login. Is the backend running?');
+                  } finally {
+                    setIsLoggingIn(false);
+                  }
                 }}
-                className="w-full py-3 px-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl hover:bg-emerald-500/20 transition-colors text-sm font-medium"
+                disabled={isLoggingIn}
+                className="w-full py-3 px-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl hover:bg-emerald-500/20 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
-                Continue as Admin (nexodifyforyou@gmail.com)
+                {isLoggingIn ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  'Continue as Admin (nexodifyforyou@gmail.com)'
+                )}
               </button>
               
               <button
-                onClick={() => {
-                  // Simulate regular user login using devLogin from AuthContext
-                  const userAuth = {
-                    provider: 'google',
-                    email: 'demo@example.com',
-                    name: 'Demo User',
-                    picture: '',
-                    iat: new Date().toISOString()
-                  };
-                  const wallet = {
-                    plan: 'starter',
-                    monthly_credits: 10,
-                    credits_available: 10,
-                    renewal_date: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString().split('T')[0],
-                    ledger: []
-                  };
-                  devLogin(userAuth, wallet);
-                  navigate('/dashboard');
+                onClick={async () => {
+                  setIsLoggingIn(true);
+                  setLoginError(null);
+                  try {
+                    // Call real backend dev-login API
+                    await devLogin('demo@example.com');
+                    navigate('/dashboard');
+                  } catch (error) {
+                    console.error('Login error:', error);
+                    setLoginError(error.message || 'Failed to login. Is the backend running?');
+                  } finally {
+                    setIsLoggingIn(false);
+                  }
                 }}
-                className="w-full py-3 px-4 bg-white/[0.04] border border-white/[0.12] text-white/70 rounded-xl hover:bg-white/[0.08] transition-colors text-sm font-medium"
+                disabled={isLoggingIn}
+                className="w-full py-3 px-4 bg-white/[0.04] border border-white/[0.12] text-white/70 rounded-xl hover:bg-white/[0.08] transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
-                Continue as Demo User (10 credits)
+                {isLoggingIn ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  'Continue as Demo User (10 credits)'
+                )}
               </button>
             </div>
 
