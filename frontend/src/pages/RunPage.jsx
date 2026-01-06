@@ -34,7 +34,7 @@ import {
   Moon,
   Check,
 } from 'lucide-react';
-import { generateEUCheckResults, generateHalalCheckResults } from '../lib/checkDefinitions';
+import { runAPI } from '../lib/api';
 
 const EU_COUNTRIES = [
   'Austria', 'Belgium', 'Bulgaria', 'Croatia', 'Cyprus', 'Czech Republic',
