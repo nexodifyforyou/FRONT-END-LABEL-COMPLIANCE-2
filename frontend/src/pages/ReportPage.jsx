@@ -309,18 +309,21 @@ export default function ReportPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#070A12] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5B6CFF]"></div>
+      <div className="min-h-screen bg-[#070A12] flex flex-col items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5B6CFF] mb-4"></div>
+        <p className="text-white/50 text-sm">Loading report...</p>
       </div>
     );
   }
 
-  if (!run) {
+  if (loadError || !run) {
     return (
       <div className="min-h-screen bg-[#070A12] flex flex-col items-center justify-center text-white">
         <XCircle className="h-12 w-12 text-rose-400 mb-4" />
-        <h1 className="text-xl font-semibold mb-2">Run Not Found</h1>
-        <p className="text-white/50 mb-6">The requested run could not be found.</p>
+        <h1 className="text-xl font-semibold mb-2">{loadError ? 'Error Loading Report' : 'Run Not Found'}</h1>
+        <p className="text-white/50 mb-6 max-w-md text-center">
+          {loadError || 'The requested run could not be found.'}
+        </p>
         <Button onClick={() => navigate('/dashboard')} className="bg-[#5B6CFF] hover:bg-[#4A5BEE]">
           Back to Dashboard
         </Button>
