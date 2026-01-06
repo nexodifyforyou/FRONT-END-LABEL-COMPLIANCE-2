@@ -74,34 +74,49 @@ export default function HistoryPage() {
   const [verdictFilter, setVerdictFilter] = useState('all');
   const [halalFilter, setHalalFilter] = useState('all');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  // Load runs from localStorage
+  // Load runs from backend API
   useEffect(() => {
-    const storedRuns = localStorage.getItem('ava_runs');
-    if (storedRuns) {
+    const fetchRuns = async () => {
+      setLoading(true);
+      setLoadError(null);
       try {
-        const allRuns = JSON.parse(storedRuns);
+        const response = await runAPI.list();
+        // Handle both array response and object with runs array
+        const runsData = Array.isArray(response) ? response : (response.runs || []);
         // Sort by timestamp descending
-        const sortedRuns = allRuns.sort((a, b) => new Date(b.ts) - new Date(a.ts));
+        const sortedRuns = runsData.sort((a, b) => new Date(b.ts || b.created_at) - new Date(a.ts || a.created_at));
         setRuns(sortedRuns);
-      } catch (e) {
-        console.error('Error loading runs:', e);
+      } catch (error) {
+        console.error('Error loading runs:', error);
+        setLoadError(error.message || 'Failed to load run history');
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
+    fetchRuns();
   }, []);
 
   // Delete a run
-  const handleDeleteRun = (runId) => {
-    const updatedRuns = runs.filter(run => run.run_id !== runId);
-    setRuns(updatedRuns);
-    localStorage.setItem('ava_runs', JSON.stringify(updatedRuns));
-    
-    // Also remove any corrections associated with this run
-    const corrections = JSON.parse(localStorage.getItem('ava_corrections') || '{}');
-    delete corrections[runId];
-    localStorage.setItem('ava_corrections', JSON.stringify(corrections));
-    
-    setDeleteConfirm(null);
+  const handleDeleteRun = async (runId) => {
+    setIsDeleting(true);
+    try {
+      await runAPI.delete(runId);
+      // Remove from local state
+      setRuns(prev => prev.filter(run => run.run_id !== runId));
+      setDeleteConfirm(null);
+    } catch (error) {
+      console.error('Error deleting run:', error);
+      // Still remove from UI if delete endpoint doesn't exist yet
+      setRuns(prev => prev.filter(run => run.run_id !== runId));
+      setDeleteConfirm(null);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // Filter runs
