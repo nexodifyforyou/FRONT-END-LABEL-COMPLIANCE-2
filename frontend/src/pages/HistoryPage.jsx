@@ -435,6 +435,8 @@ export default function HistoryPage() {
             Showing {filteredRuns.length} of {runs.length} runs
           </div>
         )}
+          </>
+        )}
       </main>
 
       {/* Delete Confirmation Dialog */}
