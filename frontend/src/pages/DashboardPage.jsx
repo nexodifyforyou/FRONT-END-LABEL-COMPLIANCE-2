@@ -31,8 +31,9 @@ import {
   Zap,
   Target,
   Activity,
+  Loader2,
 } from 'lucide-react';
-import { generateEUCheckResults, generateHalalCheckResults } from '../lib/checkDefinitions';
+import { runAPI, healthCheck, API_BASE_URL } from '../lib/api';
 
 // Verdict Badge component
 const VerdictBadge = ({ verdict, size = 'sm' }) => {
