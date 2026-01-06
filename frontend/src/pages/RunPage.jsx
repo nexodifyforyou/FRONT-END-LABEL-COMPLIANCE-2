@@ -166,48 +166,31 @@ export default function RunPage() {
     setError(null);
 
     try {
-      // Simulate processing delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Build FormData for multipart/form-data request
+      const formData = new FormData();
+      formData.append('product_name', productName);
+      formData.append('company_name', companyName);
+      formData.append('country_of_sale', countryOfSale);
+      formData.append('languages_provided', JSON.stringify(languages));
+      formData.append('halal_audit', halalEnabled.toString());
+      formData.append('attach_pdf', 'true');
+      formData.append('label_file', labelFile);
+      formData.append('tds_file', tdsFile);
 
-      // Generate run ID and mock results
-      const runId = generateRunId();
-      const results = generateMockResults(productName, companyName, halalEnabled);
+      // Call real backend API
+      const response = await runAPI.create(formData);
 
-      // Create run record
-      const runRecord = {
-        run_id: runId,
-        ts: new Date().toISOString(),
-        product_name: productName,
-        company_name: companyName,
-        country_of_sale: countryOfSale,
-        languages_provided: languages,
-        halal: halalEnabled,
-        verdict: results.verdict,
-        compliance_score: results.compliance_score,
-        evidence_confidence: results.evidence_confidence,
-        checks: results.checks,
-        halalChecks: results.halalChecks,
-        pdf_type: halalEnabled ? 'halal' : 'eu',
-        label_file_name: labelFile.name,
-        tds_file_name: tdsFile.name,
-      };
-
-      // Save to localStorage
-      const existingRuns = JSON.parse(localStorage.getItem('ava_runs') || '[]');
-      existingRuns.push(runRecord);
-      localStorage.setItem('ava_runs', JSON.stringify(existingRuns));
-
-      // Deduct credits (unless admin)
+      // Deduct credits (unless admin) - this should ideally be handled by backend
       if (!isAdmin) {
         const reason = halalEnabled ? 'EU + Halal preflight' : 'EU preflight';
-        deductCredits(requiredCredits, reason, runId);
+        deductCredits(requiredCredits, reason, response.run_id);
       }
 
-      // Navigate to report
-      navigate(`/report/${runId}`);
+      // Navigate to report using the run_id from response
+      navigate(`/report/${response.run_id}`);
     } catch (err) {
       console.error('Run error:', err);
-      setError('Failed to run preflight. Please try again.');
+      setError(err.message || 'Failed to run preflight. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
