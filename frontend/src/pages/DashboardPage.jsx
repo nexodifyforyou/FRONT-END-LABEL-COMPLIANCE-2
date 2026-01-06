@@ -547,29 +547,13 @@ export default function DashboardPage() {
                     Start New Run
                   </Button>
                   <Button
-                    onClick={() => handleRunSampleDemo(false)}
-                    variant="outline"
-                    className="w-full justify-start border-white/[0.12] text-white/70 hover:bg-white/[0.04] rounded-xl h-10"
-                  >
-                    <Play className="mr-2 h-4 w-4" />
-                    Run EU Demo
-                  </Button>
-                  <Button
-                    onClick={() => handleRunSampleDemo(true)}
-                    variant="outline"
-                    className="w-full justify-start border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 rounded-xl h-10"
-                  >
-                    <Moon className="mr-2 h-4 w-4" />
-                    Run Halal Demo
-                  </Button>
-                  <Button
                     onClick={() => runs.length > 0 && navigate(`/report/${runs[0].run_id}`)}
                     variant="outline"
                     disabled={runs.length === 0}
                     className="w-full justify-start border-white/[0.12] text-white/70 hover:bg-white/[0.04] rounded-xl h-10 disabled:opacity-40"
                   >
                     <RefreshCw className="mr-2 h-4 w-4" />
-                    Re-run Last
+                    View Last Run
                   </Button>
                 </div>
               </div>
