@@ -249,58 +249,49 @@ export default function DashboardPage() {
     navigate('/signin');
   };
 
-  const handleDownloadPdf = (run) => {
-    const pdfPath = run.halal ? '/sample-halal-report.pdf' : '/sample-report.pdf';
-    const link = document.createElement('a');
-    link.href = pdfPath;
-    link.download = `${run.run_id}-report.pdf`;
-    link.click();
-    
-    // Mark checklist
-    if (!checklist.downloadPdf) {
-      toggleChecklistItem('downloadPdf');
+  const handleDownloadPdf = async (run) => {
+    try {
+      // Get PDF URL from run data or construct default
+      const pdfUrl = run?.files?.pdf 
+        ? `${API_BASE_URL}${run.files.pdf}`
+        : runAPI.getPdfUrl(run.run_id);
+      
+      // Download the PDF
+      const response = await fetch(pdfUrl, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('ava_token')}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to download PDF');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${run.run_id}-report.pdf`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      
+      // Mark checklist
+      if (!checklist.downloadPdf) {
+        toggleChecklistItem('downloadPdf');
+      }
+    } catch (error) {
+      console.error('PDF download error:', error);
+      // Fallback to direct link
+      const pdfUrl = run?.files?.pdf 
+        ? `${API_BASE_URL}${run.files.pdf}`
+        : runAPI.getPdfUrl(run.run_id);
+      window.open(pdfUrl, '_blank');
     }
   };
 
-  const handleRunSampleDemo = (includeHalal = false) => {
-    // Generate check results from shared definitions
-    const euChecks = generateEUCheckResults();
-    const halalChecks = includeHalal ? generateHalalCheckResults() : null;
-    
-    const allChecks = includeHalal ? [...euChecks, ...halalChecks] : euChecks;
-    const criticalCount = allChecks.filter(c => c.status === 'critical').length;
-    const warningCount = allChecks.filter(c => c.status === 'warning').length;
-    const passCount = allChecks.filter(c => c.status === 'pass').length;
-    const totalChecks = allChecks.length;
-    const weightedScore = Math.round((passCount * 100 + warningCount * 60 + criticalCount * 20) / totalChecks);
-    
-    let verdict = 'PASS';
-    if (criticalCount > 2 || weightedScore < 60) verdict = 'FAIL';
-    else if (criticalCount > 0 || warningCount > 2 || weightedScore < 80) verdict = 'CONDITIONAL';
-    
-    // Create a sample demo run using shared definitions
-    const demoRun = {
-      run_id: `DEMO-${Date.now().toString(36).toUpperCase()}`,
-      ts: new Date().toISOString(),
-      product_name: includeHalal ? 'Premium Halal Chocolate' : 'Sample Chocolate Bar',
-      company_name: 'Demo Foods Ltd.',
-      country_of_sale: 'Italy',
-      languages_provided: ['English', 'Italian'],
-      halal: includeHalal,
-      verdict: verdict,
-      compliance_score: weightedScore,
-      evidence_confidence: Math.floor(Math.random() * 15) + 80,
-      checks: euChecks,
-      halalChecks: halalChecks,
-      pdf_type: includeHalal ? 'halal' : 'eu',
-      isDemo: true,
-    };
-    
-    const existingRuns = JSON.parse(localStorage.getItem('ava_runs') || '[]');
-    existingRuns.push(demoRun);
-    localStorage.setItem('ava_runs', JSON.stringify(existingRuns));
-    
-    navigate(`/report/${demoRun.run_id}`);
+  // Navigate to run page - no more demo runs, all runs go through backend
+  const handleStartRun = () => {
+    navigate('/run');
   };
 
   // Checklist progress
