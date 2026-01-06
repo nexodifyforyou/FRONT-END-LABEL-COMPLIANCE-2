@@ -462,16 +462,27 @@ export default function HistoryPage() {
             <Button
               variant="outline"
               onClick={() => setDeleteConfirm(null)}
+              disabled={isDeleting}
               className="border-white/[0.12] text-white/70 hover:bg-white/[0.04]"
             >
               Cancel
             </Button>
             <Button
               onClick={() => handleDeleteRun(deleteConfirm.run_id)}
+              disabled={isDeleting}
               className="bg-rose-500 hover:bg-rose-600 text-white"
             >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
