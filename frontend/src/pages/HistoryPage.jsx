@@ -145,12 +145,39 @@ export default function HistoryPage() {
     });
   }, [runs, searchQuery, verdictFilter, halalFilter]);
 
-  const handleDownloadPdf = (run) => {
-    const pdfPath = run.halal ? '/sample-halal-report.pdf' : '/sample-report.pdf';
-    const link = document.createElement('a');
-    link.href = pdfPath;
-    link.download = `${run.run_id}-report.pdf`;
-    link.click();
+  const handleDownloadPdf = async (run) => {
+    try {
+      // Get PDF URL from run data or construct default
+      const pdfUrl = run?.files?.pdf 
+        ? `${API_BASE_URL}${run.files.pdf}`
+        : runAPI.getPdfUrl(run.run_id);
+      
+      // Download the PDF
+      const response = await fetch(pdfUrl, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('ava_token')}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to download PDF');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${run.run_id}-report.pdf`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('PDF download error:', error);
+      // Fallback to direct link
+      const pdfUrl = run?.files?.pdf 
+        ? `${API_BASE_URL}${run.files.pdf}`
+        : runAPI.getPdfUrl(run.run_id);
+      window.open(pdfUrl, '_blank');
+    }
   };
 
   return (
