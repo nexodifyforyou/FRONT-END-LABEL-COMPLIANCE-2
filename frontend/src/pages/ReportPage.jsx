@@ -513,6 +513,156 @@ export default function ReportPage() {
               </div>
             </div>
 
+            {/* ================================================================
+                CORRECTIONS & RE-RUN PANEL
+                Shows previous corrections and form to apply new corrections
+                This section appears ABOVE the checks list as per requirements
+                ================================================================ */}
+            <div className="p-8 border-b border-white/[0.06]">
+              {/* Section Header - Collapsible */}
+              <button
+                onClick={() => setShowCorrectionsPanel(!showCorrectionsPanel)}
+                className="w-full flex items-center justify-between mb-6"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 bg-amber-500/10 text-amber-400 text-xs font-medium rounded-full border border-amber-500/30">
+                    <Edit3 className="inline h-3 w-3 mr-1" />
+                    Corrections
+                  </span>
+                  <span className="text-white/50 text-sm">Corrections & Re-run</span>
+                  {run.corrections && run.corrections.length > 0 && (
+                    <span className="px-2 py-0.5 bg-[#5B6CFF]/20 text-[#5B6CFF] text-xs rounded-full">
+                      {run.corrections.length} applied
+                    </span>
+                  )}
+                </div>
+                {showCorrectionsPanel ? (
+                  <ChevronUp className="h-5 w-5 text-white/40" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-white/40" />
+                )}
+              </button>
+
+              {showCorrectionsPanel && (
+                <div className="space-y-6">
+                  {/* Previous Corrections List */}
+                  {run.corrections && run.corrections.length > 0 && (
+                    <div className="space-y-3">
+                      <Label className="text-white/60 text-xs uppercase tracking-wider">Previous Corrections</Label>
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {run.corrections.map((correction, idx) => (
+                          <div 
+                            key={idx} 
+                            className="bg-white/[0.02] border border-white/[0.06] rounded-lg p-4"
+                          >
+                            <div className="flex items-center gap-2 mb-2">
+                              <MessageSquare className="h-4 w-4 text-[#5B6CFF]" />
+                              <span className="text-xs text-white/40">
+                                {formatCorrectionDate(correction.created_at)}
+                              </span>
+                            </div>
+                            <p className="text-white/80 text-sm">{correction.corrections_text}</p>
+                            {correction.override_fields_json && correction.override_fields_json !== '{}' && (
+                              <div className="mt-2 pt-2 border-t border-white/[0.06]">
+                                <span className="text-xs text-white/40">Override fields: </span>
+                                <code className="text-xs text-amber-400/80 bg-amber-500/10 px-1 rounded">
+                                  {correction.override_fields_json}
+                                </code>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* New Correction Form */}
+                  <div className="bg-white/[0.02] border border-white/[0.08] rounded-xl p-5 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Plus className="h-4 w-4 text-emerald-400" />
+                      <Label className="text-white/80 text-sm font-medium">Apply New Correction</Label>
+                    </div>
+
+                    {/* Corrections Text Input */}
+                    <div className="space-y-2">
+                      <Label htmlFor="corrections-text" className="text-white/60 text-xs">
+                        What should be corrected? <span className="text-rose-400">*</span>
+                      </Label>
+                      <Textarea
+                        id="corrections-text"
+                        value={correctionsText}
+                        onChange={(e) => setCorrectionsText(e.target.value)}
+                        placeholder="E.g., 'Update allergen emphasis for milk and hazelnuts. Correct QUID percentage for cocoa.'"
+                        className="min-h-[100px] bg-white/[0.04] border-white/[0.12] text-white placeholder:text-white/30 focus:border-[#5B6CFF] resize-none text-sm"
+                      />
+                      <p className="text-white/30 text-xs">Minimum 3 characters required</p>
+                    </div>
+
+                    {/* Languages Override (Optional) - Collapsible */}
+                    <div className="border border-white/[0.06] rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => setShowOverrides(!showOverrides)}
+                        className="w-full px-4 py-2.5 flex items-center justify-between bg-white/[0.02] hover:bg-white/[0.04] transition-colors text-left"
+                      >
+                        <span className="text-xs text-white/60">Override fields (optional)</span>
+                        {showOverrides ? (
+                          <ChevronUp className="h-4 w-4 text-white/40" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 text-white/40" />
+                        )}
+                      </button>
+                      {showOverrides && (
+                        <div className="p-4 border-t border-white/[0.06] space-y-3">
+                          <div className="space-y-1.5">
+                            <Label htmlFor="languages-override" className="text-white/60 text-xs">
+                              Languages (comma-separated)
+                            </Label>
+                            <Input
+                              id="languages-override"
+                              value={languagesOverride}
+                              onChange={(e) => setLanguagesOverride(e.target.value)}
+                              placeholder="e.g., English, Italian, German"
+                              className="bg-white/[0.04] border-white/[0.12] text-white placeholder:text-white/30 text-sm"
+                            />
+                            <p className="text-white/30 text-xs">
+                              Current: {run.languages_provided?.join(', ') || 'Not specified'}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Error Display */}
+                    {correctionsError && (
+                      <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-lg flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-rose-400 flex-shrink-0" />
+                        <span className="text-rose-400 text-sm">{correctionsError}</span>
+                      </div>
+                    )}
+
+                    {/* Apply Button */}
+                    <Button
+                      onClick={handleApplyCorrections}
+                      disabled={isApplyingCorrections || correctionsText.trim().length < 3}
+                      className="w-full bg-[#5B6CFF] hover:bg-[#4A5BEE] text-white h-10 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isApplyingCorrections ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Applying corrections...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                          Apply corrections
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Page 2: EU Findings Overview */}
             <div className="p-8 border-b border-white/[0.06]">
               <div className="flex items-center gap-2 mb-6">
