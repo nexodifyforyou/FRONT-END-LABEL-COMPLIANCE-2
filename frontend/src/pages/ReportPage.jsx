@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
@@ -39,7 +39,8 @@ import {
   History,
   Code,
 } from 'lucide-react';
-import { getSeverityColor, HALAL_CHECK_DEFINITIONS, generateEUCheckResults, generateHalalCheckResults } from '../lib/checkDefinitions';
+import { getSeverityColor, HALAL_CHECK_DEFINITIONS } from '../lib/checkDefinitions';
+import { runAPI, API_BASE_URL } from '../lib/api';
 
 // Severity Badge - uses shared severity colors
 const SeverityBadge = ({ level }) => {
