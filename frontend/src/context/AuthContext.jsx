@@ -212,11 +212,12 @@ export function AuthProvider({ children }) {
 
   const value = {
     user,
+    token,
     wallet,
     credits,
     creditsDisplay,
     loading,
-    isAuthenticated: !!user,
+    isAuthenticated: !!user && !!token,
     isAdmin,
     loginWithGoogle,
     devLogin,
