@@ -473,26 +473,14 @@ export default function DashboardPage() {
                     <History className="h-10 w-10 text-white/15 mx-auto mb-3" />
                     <p className="text-white/50 text-sm mb-1">No runs yet</p>
                     <p className="text-white/30 text-xs mb-4">Start your first preflight to see results here</p>
-                    <div className="flex justify-center gap-2">
-                      <Button
-                        onClick={() => handleRunSampleDemo(false)}
-                        variant="outline"
-                        size="sm"
-                        className="border-[#5B6CFF]/30 text-[#5B6CFF] hover:bg-[#5B6CFF]/10"
-                      >
-                        <Play className="mr-2 h-3 w-3" />
-                        EU Demo
-                      </Button>
-                      <Button
-                        onClick={() => handleRunSampleDemo(true)}
-                        variant="outline"
-                        size="sm"
-                        className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
-                      >
-                        <Moon className="mr-2 h-3 w-3" />
-                        Halal Demo
-                      </Button>
-                    </div>
+                    <Button
+                      onClick={handleStartRun}
+                      size="sm"
+                      className="bg-[#5B6CFF] hover:bg-[#4A5BEE]"
+                    >
+                      <Plus className="mr-2 h-3 w-3" />
+                      Start New Run
+                    </Button>
                   </div>
                 ) : (
                   <div className="divide-y divide-white/[0.04]">
