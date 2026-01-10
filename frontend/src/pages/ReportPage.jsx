@@ -476,12 +476,15 @@ export default function ReportPage() {
                     ['Product Name', run.product_name],
                     ['Company', run.company_name],
                     ['Country of Sale', run.country_of_sale],
-                    ['Languages', run.languages_provided?.join(', ') || 'English'],
+                    ['Languages', (Array.isArray(run.languages_provided) ? run.languages_provided.join(', ') : (run.languages_provided?.label ?? run.languages_provided?.value ?? run.languages_provided ?? 'English')) || 'English'],
                     ['Halal Module', run.halal ? 'Enabled' : 'Disabled'],
                   ].map(([label, value]) => (
                     <div key={label} className="flex justify-between py-2 border-b border-white/[0.04] last:border-0">
                       <span className="text-white/50 text-sm">{label}</span>
-                      <span className="text-white/90 text-sm font-medium text-right">{value}</span>
+                      <span className="text-white/90 text-sm font-medium text-right">{(value && typeof value === 'object'
+    ? (value.label ?? value.value ?? JSON.stringify(value))
+    : (Array.isArray(value) ? value.join(', ') : String(value ?? '-'))
+  )}</span>
                     </div>
                   ))}
                 </div>
@@ -625,7 +628,7 @@ export default function ReportPage() {
                               className="bg-white/[0.04] border-white/[0.12] text-white placeholder:text-white/30 text-sm"
                             />
                             <p className="text-white/30 text-xs">
-                              Current: {run.languages_provided?.join(', ') || 'Not specified'}
+                              Current: {(Array.isArray(run.languages_provided) ? run.languages_provided.join(', ') : (run.languages_provided?.label ?? run.languages_provided?.value ?? run.languages_provided ?? 'English')) || 'Not specified'}
                             </p>
                           </div>
                         </div>
