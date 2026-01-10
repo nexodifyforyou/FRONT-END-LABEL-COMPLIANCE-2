@@ -1,0 +1,55 @@
+name: Fix Vercel dependency conflicts (React 18 + date-fns 3)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Patch package.json versions
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+
+          const pkgPath = path.join(process.cwd(), 'frontend', 'package.json');
+          if (!fs.existsSync(pkgPath)) {
+            console.error('ERROR: frontend/package.json not found');
+            process.exit(1);
+          }
+
+          const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+          pkg.dependencies = pkg.dependencies || {};
+
+          // Force compatible versions
+          pkg.dependencies['react'] = '^18.2.0';
+          pkg.dependencies['react-dom'] = '^18.2.0';
+
+          // date-fns must be v2/v3 for react-day-picker@8
+          if (pkg.dependencies['date-fns']) {
+            pkg.dependencies['date-fns'] = '^3.6.0';
+          }
+
+          fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+          console.log('Patched:', pkgPath);
+          NODE
+
+      - name: Remove lockfile so Vercel resolves cleanly
+        run: |
+          rm -f frontend/package-lock.json
+          rm -f package-lock.json
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add frontend/package.json frontend/package-lock.json package-lock.json || true
+          git commit -m "Fix deps for Vercel (React 18, date-fns 3, reset lockfile)" || echo "No changes to commit"
+          git push
