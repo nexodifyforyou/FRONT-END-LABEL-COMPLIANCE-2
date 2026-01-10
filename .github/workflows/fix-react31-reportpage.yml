@@ -1,111 +1,71 @@
-name: Fix React crash (#31) on ReportPage
+name: Fix ReportPage React crash (#31)
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
 
 jobs:
   patch:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Patch ReportPage.jsx (render-safe values)
+      - name: Patch ReportPage to safely render objects
         run: |
-          node - <<'NODE'
+          node <<'NODE'
           const fs = require('fs');
           const path = require('path');
 
-          const fp = path.join(process.cwd(), 'frontend', 'src', 'pages', 'ReportPage.jsx');
-          if (!fs.existsSync(fp)) {
-            console.error('ERROR: File not found:', fp);
+          const candidates = [
+            'frontend/src/pages/ReportPage.jsx',
+            'frontend/src/pages/ReportPage.tsx',
+            'frontend/src/pages/ReportPage.js',
+            'frontend/src/pages/ReportPage.ts',
+          ];
+
+          const fp = candidates
+            .map(p => path.join(process.cwd(), p))
+            .find(p => fs.existsSync(p));
+
+          if (!fp) {
+            console.error('ERROR: ReportPage file not found. Checked:', candidates.join(', '));
             process.exit(1);
           }
 
           let s = fs.readFileSync(fp, 'utf8');
-          let changed = false;
+          const before = s;
 
-          // 1) Insert fmt helper (prevents React crash when values are objects)
-          if (!s.includes('const fmt = (v) =>')) {
-            const anchor = 'export default function ReportPage() {';
-            const i = s.indexOf(anchor);
-            if (i < 0) {
-              console.error('ERROR: Anchor not found in ReportPage.jsx');
-              process.exit(1);
-            }
-            const insertAt = i + anchor.length;
-
-            const helper = `
-
-  // Render-safe formatter: prevents React crash when values are objects (e.g., { label, value })
-  const fmt = (v) => {
-    if (v === null || v === undefined) return '—';
-    if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') return String(v);
-    if (Array.isArray(v)) return v.map(fmt).join(', ');
-    if (typeof v === 'object') return v.label || v.value || JSON.stringify(v);
-    return String(v);
-  };
-`;
-            s = s.slice(0, insertAt) + helper + s.slice(insertAt);
-            changed = true;
-          }
-
-          // 2) Patch the Product Information map block:
-          //    - Stop using .join() on languages (not needed)
-          //    - Render fmt(value) so objects never crash React
-          const re = /\{\[\s*[\s\S]*?\]\.map\(\(\[label,\s*value\]\)\s*=>\s*\([\s\S]*?\)\)\s*\}/m;
-          const m = re.exec(s);
-          if (!m) {
-            console.error('ERROR: Could not find the map block in Product Information section.');
-            process.exit(1);
-          }
-
-          const block = m[0];
-          if (!block.includes("['Country of Sale'") || !block.includes("['Product Name'")) {
-            console.error('ERROR: Matched block does not look like Product Information. Aborting.');
-            process.exit(1);
-          }
-
-          let newBlock = block;
-
-          // Replace languages line if present with join()
-          newBlock = newBlock.replace(
-            /\['Languages',\s*run\.languages_provided\?\.\s*join\([^\)]*\)\s*\|\|\s*'English'\s*\]/,
-            "['Languages', run.languages_provided || 'English']"
+          // Fix #31: React cannot render objects like {label,value} directly.
+          // Replace any JSX "{value}" used in the "label/value row" UI with a safe formatter.
+          s = s.replace(
+            /\{value\}<\/span>/g,
+            `{(value && typeof value === 'object'
+              ? (value.label ?? value.value ?? JSON.stringify(value))
+              : (Array.isArray(value) ? value.join(', ') : String(value ?? '-'))
+            )}</span>`
           );
 
-          // Replace render {value} with {fmt(value)} (the real fix)
-          newBlock = newBlock.replace(
-            /\{value\}<\/span>/,
-            "{fmt(value)}</span>"
+          // Also reduce risk for languages row if it uses join() on a non-array.
+          s = s.replace(
+            /run\.languages_provided\?\.\s*join\([^\)]*\)/g,
+            `(Array.isArray(run.languages_provided) ? run.languages_provided.join(', ') : (run.languages_provided?.label ?? run.languages_provided?.value ?? run.languages_provided ?? 'English'))`
           );
 
-          if (newBlock !== block) {
-            s = s.replace(block, newBlock);
-            changed = true;
+          if (s === before) {
+            console.log('No changes made (pattern not found). File:', fp);
+          } else {
+            fs.writeFileSync(fp, s, 'utf8');
+            console.log('Patched:', fp);
           }
-
-          if (!changed) {
-            console.log('No changes needed (already patched).');
-            process.exit(0);
-          }
-
-          fs.writeFileSync(fp, s, 'utf8');
-          console.log('Patched:', fp);
           NODE
 
-      - name: Commit & push
+      - name: Commit and push
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add frontend/src/pages/ReportPage.jsx
+          git add frontend/src/pages/ReportPage.* || true
           git commit -m "Fix ReportPage crash: render-safe values (React #31)" || echo "Nothing to commit"
           git push
