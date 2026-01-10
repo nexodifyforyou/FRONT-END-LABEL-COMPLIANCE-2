@@ -13,7 +13,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Patch package.json versions
+      - name: Patch package.json versions (deps + devDeps)
         run: |
           node - <<'NODE'
           const fs = require('fs');
@@ -26,30 +26,42 @@ jobs:
           }
 
           const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+
+          // Ensure both blocks exist
           pkg.dependencies = pkg.dependencies || {};
+          pkg.devDependencies = pkg.devDependencies || {};
 
-          // Force compatible versions
-          pkg.dependencies['react'] = '^18.2.0';
-          pkg.dependencies['react-dom'] = '^18.2.0';
+          // Force React 18 everywhere (some templates wrongly place react in devDependencies)
+          for (const block of ['dependencies', 'devDependencies']) {
+            pkg[block]['react'] = '^18.2.0';
+            pkg[block]['react-dom'] = '^18.2.0';
 
-          // date-fns must be v2/v3 for react-day-picker@8
-          if (pkg.dependencies['date-fns']) {
-            pkg.dependencies['date-fns'] = '^3.6.0';
+            if (pkg[block]['date-fns']) {
+              pkg[block]['date-fns'] = '^3.6.0';
+            }
           }
+
+          // Also ensure date-fns is compatible even if only in deps
+          if (pkg.dependencies && pkg.dependencies['date-fns']) pkg.dependencies['date-fns'] = '^3.6.0';
+          if (pkg.devDependencies && pkg.devDependencies['date-fns']) pkg.devDependencies['date-fns'] = '^3.6.0';
 
           fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
           console.log('Patched:', pkgPath);
           NODE
 
-      - name: Remove lockfile so Vercel resolves cleanly
+      - name: Remove lockfiles (force clean resolution)
         run: |
           rm -f frontend/package-lock.json
+          rm -f frontend/yarn.lock
+          rm -f frontend/pnpm-lock.yaml
           rm -f package-lock.json
+          rm -f yarn.lock
+          rm -f pnpm-lock.yaml
 
       - name: Commit and push
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add frontend/package.json frontend/package-lock.json package-lock.json || true
-          git commit -m "Fix deps for Vercel (React 18, date-fns 3, reset lockfile)" || echo "No changes to commit"
+          git add -A
+          git commit -m "Fix deps for Vercel: React 18 + date-fns 3 (clean locks)" || echo "No changes to commit"
           git push
