@@ -90,7 +90,7 @@ const SeverityBadge = ({ level }) => {
 };
 
 // Finding Card for EU checks
-const FindingCard = ({ title, severity, source, description, reference }) => {
+const FindingCard = ({ title, severity, source, description, reference, safeString }) => {
   const StatusIcon = severity === 'critical' || severity === 'high' ? XCircle : severity === 'warning' || severity === 'medium' ? AlertTriangle : CheckCircle;
   const statusColor = severity === 'critical' || severity === 'high' ? 'text-rose-400' : severity === 'warning' || severity === 'medium' ? 'text-amber-400' : 'text-emerald-400';
   
@@ -100,16 +100,16 @@ const FindingCard = ({ title, severity, source, description, reference }) => {
         <StatusIcon className={`h-5 w-5 mt-0.5 ${statusColor} flex-shrink-0`} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center flex-wrap gap-2 mb-2">
-            <span className="text-white/90 font-medium">{title}</span>
+            <span className="text-white/90 font-medium">{safeString(title, 'Untitled check')}</span>
             <SeverityBadge level={severity} />
             {source && (
               <span className="text-xs text-[#5B6CFF] bg-[#5B6CFF]/10 px-2 py-0.5 rounded-full border border-[#5B6CFF]/30">
-                {source}
+                {safeString(source, 'Unknown source')}
               </span>
             )}
           </div>
-          {description && <p className="text-white/55 text-sm mb-1">{description}</p>}
-          {reference && <p className="text-white/30 text-xs">Ref: {reference}</p>}
+          {description && <p className="text-white/55 text-sm mb-1">{safeString(description, '')}</p>}
+          {reference && <p className="text-white/30 text-xs">Ref: {safeString(reference, '')}</p>}
         </div>
       </div>
     </div>
@@ -117,7 +117,7 @@ const FindingCard = ({ title, severity, source, description, reference }) => {
 };
 
 // Halal Check Card - special styling for Halal module
-const HalalCheckCard = ({ check }) => {
+const HalalCheckCard = ({ check, safeString }) => {
   const colors = getSeverityColor(check.status);
   const StatusIcon = check.status === 'critical' ? XCircle : 
                      check.status === 'warning' ? AlertTriangle : 
@@ -129,20 +129,20 @@ const HalalCheckCard = ({ check }) => {
         <StatusIcon className={`h-5 w-5 mt-0.5 ${colors.text} flex-shrink-0`} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center flex-wrap gap-2 mb-2">
-            <span className="text-white/90 font-medium">{check.title}</span>
+            <span className="text-white/90 font-medium">{safeString(check.title, 'Untitled check')}</span>
             <SeverityBadge level={check.status} />
             <span className="text-xs text-emerald-400/70 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-              {check.category}
+              {safeString(check.category, 'General')}
             </span>
           </div>
-          <p className="text-white/55 text-sm mb-2">{check.description}</p>
+          <p className="text-white/55 text-sm mb-2">{safeString(check.description, '')}</p>
           {check.status !== 'pass' && check.status !== 'not_evaluated' && (
             <div className="mt-2 p-2 bg-white/[0.02] rounded-lg">
               <p className="text-xs text-amber-400/80 mb-1">
-                <strong>Why it matters:</strong> {check.whyItMatters}
+                <strong>Why it matters:</strong> {safeString(check.whyItMatters, '')}
               </p>
               <p className="text-xs text-emerald-400/80">
-                <strong>What to provide:</strong> {check.whatToProvide}
+                <strong>What to provide:</strong> {safeString(check.whatToProvide, '')}
               </p>
             </div>
           )}
@@ -335,6 +335,32 @@ export default function ReportPage() {
     }
   };
 
+  const safeString = (value, fallback = '—') => {
+    if (value === null || value === undefined) return fallback;
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+    if (Array.isArray(value)) {
+      const list = value.map((item) => safeString(item, '')).filter(Boolean);
+      return list.length > 0 ? list.join(', ') : fallback;
+    }
+    if (typeof value === 'object') {
+      if ('label' in value) return safeString(value.label, fallback);
+      if ('value' in value) return safeString(value.value, fallback);
+      try {
+        return JSON.stringify(value);
+      } catch (error) {
+        return fallback;
+      }
+    }
+    return fallback;
+  };
+
+  const safeNumber = (value, fallback = 0) => {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : fallback;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#070A12] flex flex-col items-center justify-center">
@@ -360,9 +386,18 @@ export default function ReportPage() {
   }
 
   // Derive data from run
-  const scoreColor = run.compliance_score >= 85 ? 'text-emerald-400' : run.compliance_score >= 70 ? 'text-amber-400' : 'text-rose-400';
-  const euChecks = run.checks || [];
-  const halalChecks = run.halalChecks || [];
+  const complianceScore = safeNumber(run?.compliance_score, 0);
+  const evidenceConfidence = safeNumber(run?.evidence_confidence, 0);
+  const verdict = typeof run?.verdict === 'string' ? run.verdict : safeString(run?.verdict, 'CONDITIONAL');
+  const runIdDisplay = safeString(run?.run_id, runId || 'Unknown');
+  const generatedAt = run?.ts ? new Date(run.ts) : null;
+  const generatedAtLabel = generatedAt && !Number.isNaN(generatedAt.getTime())
+    ? generatedAt.toLocaleString()
+    : 'Unknown time';
+  const scoreColor = complianceScore >= 85 ? 'text-emerald-400' : complianceScore >= 70 ? 'text-amber-400' : 'text-rose-400';
+  const euChecks = Array.isArray(run?.checks) ? run.checks : [];
+  const halalChecks = Array.isArray(run?.halalChecks) ? run.halalChecks : [];
+  const corrections = Array.isArray(run?.corrections) ? run.corrections : [];
   
   const criticalCount = [...euChecks, ...halalChecks].filter(c => c.status === 'critical').length;
   const warningCount = [...euChecks, ...halalChecks].filter(c => c.status === 'warning').length;
@@ -415,7 +450,7 @@ export default function ReportPage() {
           {/* Header with Verdict */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
             <div className="flex items-center gap-3 mb-4">
-              <VerdictBadge verdict={run.verdict} />
+              <VerdictBadge verdict={verdict} />
               {run.halal && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
                   <Moon className="h-3.5 w-3.5" />
@@ -427,7 +462,7 @@ export default function ReportPage() {
               Compliance Report
             </h1>
             <p className="text-white/60">
-              Run ID: {run.run_id} • Generated: {new Date(run.ts).toLocaleString()}
+              Run ID: {runIdDisplay} • Generated: {generatedAtLabel}
             </p>
           </motion.div>
 
@@ -450,7 +485,7 @@ export default function ReportPage() {
               </div>
               <div className="text-right text-sm">
                 <div className="text-white/40">Run ID</div>
-                <div className="text-white/70 font-mono">{run.run_id}</div>
+                <div className="text-white/70 font-mono">{runIdDisplay}</div>
               </div>
             </div>
 
@@ -476,15 +511,12 @@ export default function ReportPage() {
                     ['Product Name', run.product_name],
                     ['Company', run.company_name],
                     ['Country of Sale', run.country_of_sale],
-                    ['Languages', (Array.isArray(run.languages_provided) ? run.languages_provided.join(', ') : (run.languages_provided?.label ?? run.languages_provided?.value ?? run.languages_provided ?? 'English')) || 'English'],
+                    ['Languages', run.languages_provided || 'English'],
                     ['Halal Module', run.halal ? 'Enabled' : 'Disabled'],
                   ].map(([label, value]) => (
                     <div key={label} className="flex justify-between py-2 border-b border-white/[0.04] last:border-0">
                       <span className="text-white/50 text-sm">{label}</span>
-                      <span className="text-white/90 text-sm font-medium text-right">{(value && typeof value === 'object'
-    ? (value.label ?? value.value ?? JSON.stringify(value))
-    : (Array.isArray(value) ? value.join(', ') : String(value ?? '-'))
-  )}</span>
+                      <span className="text-white/90 text-sm font-medium text-right">{safeString(value, '—')}</span>
                     </div>
                   ))}
                 </div>
@@ -493,9 +525,9 @@ export default function ReportPage() {
                 <div className="bg-[#0B1020] border border-white/[0.08] rounded-xl p-5 flex flex-col justify-between">
                   <div>
                     <div className="text-xs text-white/40 uppercase tracking-wider mb-2">Compliance Score</div>
-                    <div className={`text-5xl font-bold ${scoreColor}`}>{run.compliance_score}%</div>
+                    <div className={`text-5xl font-bold ${scoreColor}`}>{complianceScore}%</div>
                     <div className="text-white/50 text-sm mt-1">
-                      Evidence confidence: {run.evidence_confidence}%
+                      Evidence confidence: {evidenceConfidence}%
                     </div>
                   </div>
                   <div className="flex gap-3 mt-4 flex-wrap">
@@ -533,9 +565,9 @@ export default function ReportPage() {
                     Corrections
                   </span>
                   <span className="text-white/50 text-sm">Corrections & Re-run</span>
-                  {run.corrections && run.corrections.length > 0 && (
+                  {corrections.length > 0 && (
                     <span className="px-2 py-0.5 bg-[#5B6CFF]/20 text-[#5B6CFF] text-xs rounded-full">
-                      {run.corrections.length} applied
+                      {corrections.length} applied
                     </span>
                   )}
                 </div>
@@ -549,11 +581,11 @@ export default function ReportPage() {
               {showCorrectionsPanel && (
                 <div className="space-y-6">
                   {/* Previous Corrections List */}
-                  {run.corrections && run.corrections.length > 0 && (
+                  {corrections.length > 0 && (
                     <div className="space-y-3">
                       <Label className="text-white/60 text-xs uppercase tracking-wider">Previous Corrections</Label>
                       <div className="space-y-2 max-h-64 overflow-y-auto">
-                        {run.corrections.map((correction, idx) => (
+                        {corrections.map((correction, idx) => (
                           <div 
                             key={idx} 
                             className="bg-white/[0.02] border border-white/[0.06] rounded-lg p-4"
@@ -564,12 +596,12 @@ export default function ReportPage() {
                                 {formatCorrectionDate(correction.created_at)}
                               </span>
                             </div>
-                            <p className="text-white/80 text-sm">{correction.corrections_text}</p>
+                            <p className="text-white/80 text-sm">{safeString(correction.corrections_text, '')}</p>
                             {correction.override_fields_json && correction.override_fields_json !== '{}' && (
                               <div className="mt-2 pt-2 border-t border-white/[0.06]">
                                 <span className="text-xs text-white/40">Override fields: </span>
                                 <code className="text-xs text-amber-400/80 bg-amber-500/10 px-1 rounded">
-                                  {correction.override_fields_json}
+                                  {safeString(correction.override_fields_json, '')}
                                 </code>
                               </div>
                             )}
@@ -628,7 +660,7 @@ export default function ReportPage() {
                               className="bg-white/[0.04] border-white/[0.12] text-white placeholder:text-white/30 text-sm"
                             />
                             <p className="text-white/30 text-xs">
-                              Current: {(Array.isArray(run.languages_provided) ? run.languages_provided.join(', ') : (run.languages_provided?.label ?? run.languages_provided?.value ?? run.languages_provided ?? 'English')) || 'Not specified'}
+                              Current: {safeString(run.languages_provided, 'Not specified')}
                             </p>
                           </div>
                         </div>
@@ -688,6 +720,7 @@ export default function ReportPage() {
                     source={check.source}
                     description={check.description}
                     reference={check.reference}
+                    safeString={safeString}
                   />
                 ))}
               </div>
@@ -796,12 +829,12 @@ export default function ReportPage() {
                 <div className="space-y-3">
                   {halalChecks.length > 0 ? (
                     halalChecks.map((check, i) => (
-                      <HalalCheckCard key={i} check={check} />
+                      <HalalCheckCard key={i} check={check} safeString={safeString} />
                     ))
                   ) : (
                     // Fallback: Show all checks as not_evaluated
                     HALAL_CHECK_DEFINITIONS.map((check, i) => (
-                      <HalalCheckCard key={i} check={{ ...check, status: 'not_evaluated' }} />
+                      <HalalCheckCard key={i} check={{ ...check, status: 'not_evaluated' }} safeString={safeString} />
                     ))
                   )}
                 </div>
@@ -818,8 +851,8 @@ export default function ReportPage() {
 
             {/* Footer */}
             <div className="px-8 py-4 bg-white/[0.02] border-t border-white/[0.06] flex items-center justify-between text-xs text-white/40">
-              <span>Run ID: {run.run_id}</span>
-              <span>Generated: {new Date(run.ts).toLocaleString()}</span>
+              <span>Run ID: {runIdDisplay}</span>
+              <span>Generated: {generatedAtLabel}</span>
               <span>{run.halal ? 'EU + Halal' : 'EU Only'}</span>
             </div>
           </motion.div>
