@@ -75,9 +75,12 @@ export const runAPI = {
   },
   
   // GET /api/runs
-  list: async () => {
-    const response = await api.get('/api/runs');
-    return response.data;
+  list: async (params = {}) => {
+    const response = await api.get('/api/runs', { params });
+    const payload = response.data;
+    const items = Array.isArray(payload) ? payload : (payload.items || payload.runs || []);
+    const total = payload?.total ?? items.length;
+    return { runs: items, total, raw: payload };
   },
   
   // GET /api/runs/:run_id/report.json

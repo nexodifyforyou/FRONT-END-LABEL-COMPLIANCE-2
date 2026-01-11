@@ -84,9 +84,8 @@ export default function HistoryPage() {
       setLoading(true);
       setLoadError(null);
       try {
-        const response = await runAPI.list();
-        // Handle both array response and object with runs array
-        const runsData = Array.isArray(response) ? response : (response.runs || []);
+        const { runs } = await runAPI.list();
+        const runsData = runs || [];
         // Sort by timestamp descending
         const sortedRuns = runsData.sort((a, b) => new Date(b.ts || b.created_at) - new Date(a.ts || a.created_at));
         setRuns(sortedRuns);

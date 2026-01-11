@@ -55,9 +55,9 @@ export default function RunHistoryPage() {
         if (search) params.search = search;
         if (statusFilter !== 'all') params.status = statusFilter;
 
-        const { data } = await runAPI.list(params);
-        setRuns(data.runs || []);
-        setPagination(prev => ({ ...prev, total: data.total || 0 }));
+        const { runs, total } = await runAPI.list(params);
+        setRuns(runs || []);
+        setPagination(prev => ({ ...prev, total: total || 0 }));
       } catch (err) {
         console.error('Failed to fetch runs:', err);
       } finally {
