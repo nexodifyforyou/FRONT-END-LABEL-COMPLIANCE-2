@@ -170,7 +170,11 @@ export default function DashboardPage() {
         const response = await runAPI.list();
         // Handle both array response and object with runs array
         const runsData = Array.isArray(response) ? response : (response.runs || []);
-        const sortedRuns = runsData.sort((a, b) => new Date(b.ts || b.created_at) - new Date(a.ts || a.created_at));
+        const normalizedRuns = runsData.map((run) => ({
+          ...run,
+          ts: run.ts || run.created_at || run.updated_at,
+        }));
+        const sortedRuns = normalizedRuns.sort((a, b) => new Date(b.ts) - new Date(a.ts));
         setRuns(sortedRuns);
         
         // Auto-check checklist items based on runs
