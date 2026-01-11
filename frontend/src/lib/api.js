@@ -75,8 +75,8 @@ export const runAPI = {
   },
   
   // GET /api/runs
-  list: async () => {
-    const response = await api.get('/api/runs');
+  list: async (params = {}) => {
+    const response = await api.get('/api/runs', { params });
     return response.data;
   },
   

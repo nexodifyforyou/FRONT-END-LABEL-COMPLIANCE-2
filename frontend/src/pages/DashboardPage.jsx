@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
@@ -39,11 +39,13 @@ import { runAPI, healthCheck, API_BASE_URL } from '../lib/api';
 const VerdictBadge = ({ verdict, size = 'sm' }) => {
   const styles = {
     PASS: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    WARN: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
     CONDITIONAL: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
     FAIL: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
   };
   const icons = {
     PASS: CheckCircle,
+    WARN: AlertTriangle,
     CONDITIONAL: AlertTriangle,
     FAIL: XCircle,
   };
@@ -127,10 +129,42 @@ const ChecklistItem = ({ checked, label, onClick }) => (
   </div>
 );
 
+const getRunTs = (run) => run?.ts || run?.created_at || run?.updated_at;
+
+const getRunDateValue = (run) => {
+  const ts = getRunTs(run);
+  const date = ts ? new Date(ts) : null;
+  return date && !Number.isNaN(date.getTime()) ? date.getTime() : 0;
+};
+
+const formatRunDate = (run) => {
+  const ts = getRunTs(run);
+  const date = ts ? new Date(ts) : null;
+  return date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString() : '—';
+};
+
+const normalizeScore = (score) => {
+  if (score === null || score === undefined) return null;
+  return score <= 1 ? Math.round(score * 100) : Math.round(score);
+};
+
+const isPassVerdict = (verdict) => (verdict || '').toUpperCase() === 'PASS';
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user, wallet, credits, creditsDisplay, isAdmin, logout } = useAuth();
   const [runs, setRuns] = useState([]);
+  const [dashboardStats, setDashboardStats] = useState({
+    runs7d: 0,
+    runs30d: 0,
+    passRate: 0,
+    avgIssues: 0,
+    avgRuntime: null,
+    lastRun: null,
+    trend: [],
+    topFailingChecks: [],
+    issuesByRunId: {},
+  });
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [checklist, setChecklist] = useState({
     uploadLabel: false,
@@ -141,8 +175,8 @@ export default function DashboardPage() {
     downloadPdf: false,
     saveTemplate: false,
   });
-  const [loadingRuns, setLoadingRuns] = useState(true);
   const [backendStatus, setBackendStatus] = useState('unknown'); // 'unknown', 'checking', 'online', 'offline'
+  const hasWarnedRunShape = useRef(false);
 
   // Check backend health
   const checkBackendHealth = async () => {
@@ -162,16 +196,91 @@ export default function DashboardPage() {
     }
   };
 
+  const buildDashboardStats = async (runsData) => {
+    const sortedRuns = [...runsData].sort((a, b) => getRunDateValue(b) - getRunDateValue(a));
+    const now = Date.now();
+    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+    const runs7d = sortedRuns.filter((run) => getRunDateValue(run) >= sevenDaysAgo).length;
+    const runs30dRuns = sortedRuns.filter((run) => getRunDateValue(run) >= thirtyDaysAgo);
+    const runs30d = runs30dRuns.length;
+    const passRuns30d = runs30dRuns.filter((run) => isPassVerdict(run.verdict)).length;
+    const passRate = runs30d > 0 ? Math.round((passRuns30d / runs30d) * 100) : 0;
+    const lastRun = sortedRuns[0] || null;
+
+    const recentRuns = sortedRuns.slice(0, 14);
+    const reportResults = await Promise.allSettled(
+      recentRuns.map((run) => runAPI.getReport(run.run_id))
+    );
+
+    const issuesByRunId = {};
+    let totalIssues = 0;
+    let issuesSamples = 0;
+    const failingChecksMap = {};
+
+    reportResults.forEach((result, index) => {
+      if (result.status !== 'fulfilled') return;
+      const run = recentRuns[index];
+      const reportData = result.value?.report ?? result.value;
+      const summary = reportData?.summary || {};
+      const checks = reportData?.checks || [];
+      const issuesCount = (summary.failed || 0) + (summary.warnings || 0);
+      issuesByRunId[run.run_id] = issuesCount;
+      totalIssues += issuesCount;
+      issuesSamples += 1;
+
+      checks.forEach((check) => {
+        const resultValue = (check.result || check.status || '').toUpperCase();
+        if (resultValue === 'FAIL' || resultValue === 'WARN') {
+          const key = check.id || check.title || 'unknown-check';
+          const title = check.title || check.id || 'Unknown check';
+          if (!failingChecksMap[key]) {
+            failingChecksMap[key] = { title, count: 0 };
+          }
+          failingChecksMap[key].count += 1;
+        }
+      });
+    });
+
+    const avgIssues = issuesSamples > 0
+      ? Math.round((totalIssues / issuesSamples) * 10) / 10
+      : 0;
+    const trend = recentRuns.slice().reverse().map((run) => ({
+      runId: run.run_id,
+      verdict: run.verdict,
+      score: run.score,
+      label: run.product_name,
+    }));
+    const topFailingChecks = Object.values(failingChecksMap)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    setDashboardStats({
+      runs7d,
+      runs30d,
+      passRate,
+      avgIssues,
+      avgRuntime: null,
+      lastRun,
+      trend,
+      topFailingChecks,
+      issuesByRunId,
+    });
+  };
+
   // Load runs from backend API
   useEffect(() => {
     const fetchRuns = async () => {
-      setLoadingRuns(true);
       try {
         const response = await runAPI.list();
-        // Handle both array response and object with runs array
-        const runsData = Array.isArray(response) ? response : (response.runs || []);
-        const sortedRuns = runsData.sort((a, b) => new Date(b.ts || b.created_at) - new Date(a.ts || a.created_at));
+        const runsData = Array.isArray(response?.items) ? response.items : [];
+        if (!Array.isArray(response?.items) && response?.items && !hasWarnedRunShape.current) {
+          console.warn('Expected runs response with items array, received:', response);
+          hasWarnedRunShape.current = true;
+        }
+        const sortedRuns = [...runsData].sort((a, b) => getRunDateValue(b) - getRunDateValue(a));
         setRuns(sortedRuns);
+        await buildDashboardStats(sortedRuns);
         
         // Auto-check checklist items based on runs
         if (sortedRuns.length > 0) {
@@ -187,8 +296,6 @@ export default function DashboardPage() {
         console.error('Error loading runs:', error);
         // If API fails, backend might be down
         setBackendStatus('offline');
-      } finally {
-        setLoadingRuns(false);
       }
     };
 
@@ -209,40 +316,10 @@ export default function DashboardPage() {
     localStorage.setItem('ava_checklist', JSON.stringify(newChecklist));
   };
 
-  // Calculate KPIs
-  const kpis = useMemo(() => {
-    const now = new Date();
-    const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
-    const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
-    
-    const runs7d = runs.filter(r => new Date(r.ts) >= sevenDaysAgo).length;
-    const runs30d = runs.filter(r => new Date(r.ts) >= thirtyDaysAgo).length;
-    const passRuns = runs.filter(r => r.verdict === 'PASS').length;
-    const passRate = runs.length > 0 ? Math.round((passRuns / runs.length) * 100) : 0;
-    const avgIssues = runs.length > 0
-      ? Math.round(runs.reduce((sum, r) => sum + (r.checks?.filter(c => c.status !== 'pass').length || 0), 0) / runs.length * 10) / 10
-      : 0;
-    const avgRuntime = '~2s'; // Mock
-    const lastRun = runs[0];
-    
-    return { runs7d, runs30d, passRate, avgIssues, avgRuntime, lastRun };
-  }, [runs]);
-
-  // Top failing checks
-  const topFailingChecks = useMemo(() => {
-    const checkCounts = {};
-    runs.forEach(run => {
-      run.checks?.forEach(check => {
-        if (check.status === 'critical' || check.status === 'warning') {
-          checkCounts[check.title] = (checkCounts[check.title] || 0) + 1;
-        }
-      });
-    });
-    return Object.entries(checkCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([title, count]) => ({ title, count }));
-  }, [runs]);
+  const lastRunScore = normalizeScore(dashboardStats.lastRun?.score);
+  const lastRunLabel = dashboardStats.lastRun
+    ? `${dashboardStats.lastRun.verdict || '—'}${lastRunScore !== null ? ` · ${lastRunScore}%` : ''}`
+    : 'No runs';
 
   const handleLogout = () => {
     logout();
@@ -432,39 +509,39 @@ export default function DashboardPage() {
             <KPITile
               icon={Activity}
               label="Runs (7d)"
-              value={runs.length > 0 ? kpis.runs7d : '—'}
+              value={runs.length > 0 ? dashboardStats.runs7d : '—'}
               subtext={runs.length === 0 ? 'Run your first preflight' : null}
               color={runs.length === 0 ? 'muted' : 'default'}
             />
             <KPITile
               icon={BarChart3}
               label="Runs (30d)"
-              value={runs.length > 0 ? kpis.runs30d : '—'}
+              value={runs.length > 0 ? dashboardStats.runs30d : '—'}
               color={runs.length === 0 ? 'muted' : 'default'}
             />
             <KPITile
               icon={Target}
               label="Pass Rate"
-              value={runs.length > 0 ? `${kpis.passRate}%` : '—'}
-              color={runs.length === 0 ? 'muted' : kpis.passRate >= 80 ? 'success' : kpis.passRate >= 50 ? 'warning' : 'danger'}
+              value={runs.length > 0 ? `${dashboardStats.passRate}%` : '—'}
+              color={runs.length === 0 ? 'muted' : dashboardStats.passRate >= 80 ? 'success' : dashboardStats.passRate >= 50 ? 'warning' : 'danger'}
             />
             <KPITile
               icon={AlertCircle}
               label="Avg Issues"
-              value={runs.length > 0 ? kpis.avgIssues : '—'}
+              value={runs.length > 0 ? dashboardStats.avgIssues : '—'}
               color={runs.length === 0 ? 'muted' : 'default'}
             />
             <KPITile
               icon={Zap}
               label="Avg Runtime"
-              value={runs.length > 0 ? kpis.avgRuntime : '—'}
-              color={runs.length === 0 ? 'muted' : 'default'}
+              value={dashboardStats.avgRuntime ?? '—'}
+              color={dashboardStats.avgRuntime ? 'default' : 'muted'}
             />
             <KPITile
               icon={CheckCircle}
               label="Last Run"
-              value={kpis.lastRun ? kpis.lastRun.verdict : 'No runs'}
-              color={kpis.lastRun ? (kpis.lastRun.verdict === 'PASS' ? 'success' : kpis.lastRun.verdict === 'FAIL' ? 'danger' : 'warning') : 'muted'}
+              value={lastRunLabel}
+              color={dashboardStats.lastRun ? (isPassVerdict(dashboardStats.lastRun.verdict) ? 'success' : dashboardStats.lastRun.verdict === 'FAIL' ? 'danger' : 'warning') : 'muted'}
             />
           </div>
 
@@ -516,7 +593,7 @@ export default function DashboardPage() {
                           <div className="text-xs text-white/40 font-mono">{run.run_id}</div>
                         </div>
                         <div className="col-span-2 text-sm text-white/50">
-                          {new Date(run.ts).toLocaleDateString()}
+                          {formatRunDate(run)}
                         </div>
                         <div className="col-span-2 flex items-center gap-1.5">
                           <span className="text-xs text-white/60">EU</span>
@@ -526,7 +603,7 @@ export default function DashboardPage() {
                           <VerdictBadge verdict={run.verdict} />
                         </div>
                         <div className="col-span-1 text-sm text-white/60">
-                          {run.checks?.filter(c => c.status !== 'pass').length || 0}
+                          {dashboardStats.issuesByRunId[run.run_id] ?? '—'}
                         </div>
                         <div className="col-span-2 flex items-center justify-end gap-1">
                           <button
@@ -622,7 +699,7 @@ export default function DashboardPage() {
                   <span className="text-xs text-white/40">Last 14 runs</span>
                 </div>
                 
-                {runs.length === 0 ? (
+                {dashboardStats.trend.length === 0 ? (
                   <div className="text-center py-6">
                     <TrendingUp className="h-8 w-8 text-white/15 mx-auto mb-2" />
                     <p className="text-xs text-white/40">Example view</p>
@@ -640,16 +717,25 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <div className="flex justify-center gap-1">
-                    {runs.slice(0, 14).reverse().map((run, i) => (
-                      <div
-                        key={i}
-                        className={`w-4 rounded ${
-                          run.verdict === 'PASS' ? 'bg-emerald-500' : run.verdict === 'FAIL' ? 'bg-rose-500' : 'bg-amber-500'
-                        }`}
-                        style={{ height: `${Math.max(20, run.compliance_score / 2)}px` }}
-                        title={`${run.product_name}: ${run.compliance_score}%`}
-                      />
-                    ))}
+                    {dashboardStats.trend.map((run, i) => {
+                      const scoreValue = normalizeScore(run.score);
+                      const barHeight = scoreValue !== null ? Math.max(20, scoreValue / 2) : 28;
+                      const verdictValue = (run.verdict || '').toUpperCase();
+                      const barColor = verdictValue === 'PASS'
+                        ? 'bg-emerald-500'
+                        : verdictValue === 'FAIL'
+                          ? 'bg-rose-500'
+                          : 'bg-amber-500';
+                      const titleScore = scoreValue !== null ? ` · ${scoreValue}%` : '';
+                      return (
+                        <div
+                          key={run.runId || i}
+                          className={`w-4 rounded ${barColor}`}
+                          style={{ height: `${barHeight}px` }}
+                          title={`${run.label || 'Run'}: ${run.verdict || 'Unknown'}${titleScore}`}
+                        />
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -658,7 +744,7 @@ export default function DashboardPage() {
               <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-5">
                 <h3 className="text-sm font-semibold text-white/90 mb-4">Top Failing Checks</h3>
                 
-                {topFailingChecks.length === 0 ? (
+                {dashboardStats.topFailingChecks.length === 0 ? (
                   <div className="space-y-2">
                     <p className="text-xs text-white/40 mb-3">Example view</p>
                     {['Allergen Emphasis', 'QUID Percentage', 'Storage Conditions', 'Net Quantity', 'Date Marking'].map((check, i) => (
@@ -675,12 +761,12 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {topFailingChecks.map((check, i) => (
+                    {dashboardStats.topFailingChecks.map((check, i) => (
                       <div key={i} className="flex items-center gap-3">
                         <div className="flex-1 h-2 bg-white/[0.06] rounded-full overflow-hidden">
                           <div
                             className="h-full bg-rose-500 rounded-full"
-                            style={{ width: `${Math.min(100, (check.count / runs.length) * 100)}%` }}
+                            style={{ width: `${Math.min(100, (check.count / Math.max(1, runs.length)) * 100)}%` }}
                           />
                         </div>
                         <span className="text-xs text-white/60 w-32 truncate">{check.title}</span>

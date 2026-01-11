@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
@@ -66,6 +66,26 @@ const HalalBadge = () => (
   </span>
 );
 
+const getRunTs = (run) => run?.ts || run?.created_at || run?.updated_at;
+
+const getRunDateValue = (run) => {
+  const ts = getRunTs(run);
+  const date = ts ? new Date(ts) : null;
+  return date && !Number.isNaN(date.getTime()) ? date.getTime() : 0;
+};
+
+const formatRunDate = (run) => {
+  const ts = getRunTs(run);
+  const date = ts ? new Date(ts) : null;
+  return date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString() : '—';
+};
+
+const getRunScore = (run) => {
+  const score = run?.compliance_score ?? run?.score;
+  if (score === null || score === undefined) return null;
+  return score <= 1 ? Math.round(score * 100) : Math.round(score);
+};
+
 export default function HistoryPage() {
   const navigate = useNavigate();
   const { isAdmin, creditsDisplay } = useAuth();
@@ -77,6 +97,7 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const hasWarnedRunShape = useRef(false);
 
   // Load runs from backend API
   useEffect(() => {
@@ -85,10 +106,12 @@ export default function HistoryPage() {
       setLoadError(null);
       try {
         const response = await runAPI.list();
-        // Handle both array response and object with runs array
-        const runsData = Array.isArray(response) ? response : (response.runs || []);
-        // Sort by timestamp descending
-        const sortedRuns = runsData.sort((a, b) => new Date(b.ts || b.created_at) - new Date(a.ts || a.created_at));
+        const runsData = Array.isArray(response?.items) ? response.items : [];
+        if (!Array.isArray(response?.items) && response?.items && !hasWarnedRunShape.current) {
+          console.warn('Expected runs response with items array, received:', response);
+          hasWarnedRunShape.current = true;
+        }
+        const sortedRuns = [...runsData].sort((a, b) => getRunDateValue(b) - getRunDateValue(a));
         setRuns(sortedRuns);
       } catch (error) {
         console.error('Error loading runs:', error);
@@ -325,15 +348,18 @@ export default function HistoryPage() {
                     </div>
                     <div className="col-span-2 text-sm text-white/70 truncate">{run.company_name}</div>
                     <div className="col-span-2 text-sm text-white/50">
-                      {new Date(run.ts).toLocaleDateString()}
+                      {formatRunDate(run)}
                     </div>
                     <div className="col-span-1">
-                      <span className={`text-sm font-medium ${
-                        run.compliance_score >= 85 ? 'text-emerald-400' :
-                        run.compliance_score >= 70 ? 'text-amber-400' : 'text-rose-400'
-                      }`}>
-                        {run.compliance_score}%
-                      </span>
+                      {(() => {
+                        const scoreValue = getRunScore(run);
+                        const scoreClass = scoreValue >= 85 ? 'text-emerald-400' : scoreValue >= 70 ? 'text-amber-400' : 'text-rose-400';
+                        return (
+                          <span className={`text-sm font-medium ${scoreValue === null ? 'text-white/40' : scoreClass}`}>
+                            {scoreValue === null ? '—' : `${scoreValue}%`}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <div className="col-span-2 flex items-center gap-2">
                       <VerdictBadge verdict={run.verdict} />
@@ -385,14 +411,17 @@ export default function HistoryPage() {
                     <div className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-4 text-white/40">
                         <span className="font-mono text-xs">{run.run_id}</span>
-                        <span>{new Date(run.ts).toLocaleDateString()}</span>
+                        <span>{formatRunDate(run)}</span>
                       </div>
-                      <span className={`font-medium ${
-                        run.compliance_score >= 85 ? 'text-emerald-400' :
-                        run.compliance_score >= 70 ? 'text-amber-400' : 'text-rose-400'
-                      }`}>
-                        {run.compliance_score}%
-                      </span>
+                      {(() => {
+                        const scoreValue = getRunScore(run);
+                        const scoreClass = scoreValue >= 85 ? 'text-emerald-400' : scoreValue >= 70 ? 'text-amber-400' : 'text-rose-400';
+                        return (
+                          <span className={`font-medium ${scoreValue === null ? 'text-white/40' : scoreClass}`}>
+                            {scoreValue === null ? '—' : `${scoreValue}%`}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <div className="flex items-center gap-2 pt-2 border-t border-white/[0.04]">
                       <Button

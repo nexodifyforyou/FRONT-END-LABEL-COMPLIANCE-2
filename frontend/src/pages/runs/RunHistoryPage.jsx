@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { runAPI } from '../../lib/api';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
@@ -43,6 +43,14 @@ export default function RunHistoryPage() {
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'all');
+  const hasWarnedRunShape = useRef(false);
+
+  const getRunTs = (run) => run?.ts || run?.created_at || run?.updated_at;
+
+  const normalizeScore = (score) => {
+    if (score === null || score === undefined) return null;
+    return score <= 1 ? Math.round(score * 100) : Math.round(score);
+  };
 
   useEffect(() => {
     const fetchRuns = async () => {
@@ -55,11 +63,18 @@ export default function RunHistoryPage() {
         if (search) params.search = search;
         if (statusFilter !== 'all') params.status = statusFilter;
 
-        const { data } = await runAPI.list(params);
-        setRuns(data.runs || []);
-        setPagination(prev => ({ ...prev, total: data.total || 0 }));
+        const data = await runAPI.list(params);
+        const runsData = Array.isArray(data?.items) ? data.items : [];
+        if (!Array.isArray(data?.items) && data?.items && !hasWarnedRunShape.current) {
+          console.warn('Expected runs response with items array, received:', data);
+          hasWarnedRunShape.current = true;
+        }
+        setRuns(runsData);
+        setPagination(prev => ({ ...prev, total: data?.total || runsData.length }));
       } catch (err) {
         console.error('Failed to fetch runs:', err);
+        setRuns([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
       } finally {
         setLoading(false);
       }
@@ -220,21 +235,31 @@ export default function RunHistoryPage() {
                             {run.country_of_sale || 'N/A'}
                           </TableCell>
                           <TableCell>
+                            {(() => {
+                              const runStatus = run.verdict || run.status;
+                              return (
                             <span className={cn(
                               'inline-flex items-center gap-1.5 px-2 py-1 rounded-sm text-xs font-medium border',
-                              getStatusBadge(run.status)
+                              getStatusBadge(runStatus)
                             )}>
-                              {getStatusIcon(run.status)}
-                              {run.status || 'Pending'}
+                              {getStatusIcon(runStatus)}
+                              {runStatus || 'Pending'}
                             </span>
+                              );
+                            })()}
                           </TableCell>
                           <TableCell>
-                            <span className="font-medium">
-                              {run.score !== undefined ? `${Math.round(run.score * 100)}%` : '-'}
-                            </span>
+                            {(() => {
+                              const scoreValue = normalizeScore(run.score ?? run.compliance_score);
+                              return (
+                                <span className="font-medium">
+                                  {scoreValue !== null ? `${scoreValue}%` : '-'}
+                                </span>
+                              );
+                            })()}
                           </TableCell>
                           <TableCell className="text-slate-600">
-                            {formatDate(run.created_at)}
+                            {getRunTs(run) ? formatDate(getRunTs(run)) : '—'}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
