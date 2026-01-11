@@ -1,0 +1,75 @@
+name: Patch ReportPage render crash (object -> string)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Patch frontend/src/pages/ReportPage.jsx
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const fp = 'frontend/src/pages/ReportPage.jsx';
+          if (!fs.existsSync(fp)) {
+            console.error('NOT FOUND:', fp);
+            process.exit(1);
+          }
+
+          let s = fs.readFileSync(fp, 'utf8');
+          const before = s;
+
+          // 1) Inject renderValue helper inside ReportPage() if missing
+          const anchor = 'export default function ReportPage() {';
+          if (!s.includes('const renderValue = (v) =>')) {
+            if (!s.includes(anchor)) {
+              console.error('Anchor not found:', anchor);
+              process.exit(1);
+            }
+            const helper = `
+  // Prevent React crash when API returns objects like {label, value}
+  const renderValue = (v) => {
+    if (v === null || v === undefined) return '—';
+    if (Array.isArray(v)) return v.map(renderValue).join(', ');
+    if (typeof v === 'object') return v.label ?? v.value ?? JSON.stringify(v);
+    return String(v);
+  };
+
+`;
+            s = s.replace(anchor, anchor + helper);
+          }
+
+          // 2) Stop joining languages blindly (it might be objects)
+          s = s.replace(
+            "['Languages', run.languages_provided?.join(', ') || 'English'],",
+            "['Languages', run.languages_provided || 'English'],"
+          );
+
+          // 3) The actual crash fix: never render raw {value} in JSX
+          s = s.replace(
+            /(\{value\})<\/span>/g,
+            '{renderValue(value)}</span>'
+          );
+
+          if (s === before) {
+            console.log('No changes applied (already patched or patterns not found).');
+          } else {
+            fs.writeFileSync(fp, s, 'utf8');
+            console.log('Patched:', fp);
+          }
+          NODE
+
+      - name: Commit & push
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add frontend/src/pages/ReportPage.jsx
+          git commit -m "Fix ReportPage crash: renderValue for object fields" || echo "Nothing to commit"
+          git push
