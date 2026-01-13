@@ -33,7 +33,7 @@ import {
   Activity,
   Loader2,
 } from 'lucide-react';
-import { runAPI, healthCheck, API_BASE_URL } from '../lib/api';
+import { runAPI, API_BASE_URL } from '../lib/api';
 
 // Verdict Badge component
 const VerdictBadge = ({ verdict, size = 'sm' }) => {
@@ -152,7 +152,7 @@ const isPassVerdict = (verdict) => (verdict || '').toUpperCase() === 'PASS';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { user, wallet, credits, creditsDisplay, isAdmin, logout } = useAuth();
+  const { user, wallet, credits, creditsDisplay, isAdmin, logout, token, loading } = useAuth();
   const [runs, setRuns] = useState([]);
   const [dashboardStats, setDashboardStats] = useState({
     runs7d: 0,
@@ -178,21 +178,33 @@ export default function DashboardPage() {
   const [backendStatus, setBackendStatus] = useState('unknown'); // 'unknown', 'checking', 'online', 'offline'
   const hasWarnedRunShape = useRef(false);
 
-  // Check backend health
-  const checkBackendHealth = async () => {
+  const fetchRuns = async () => {
     setBackendStatus('checking');
     try {
-      const response = await healthCheck();
-      if (response.ok || response.status === 'ok') {
-        setBackendStatus('online');
-        return true;
+      const response = await runAPI.list();
+      const runsData = Array.isArray(response?.items) ? response.items : [];
+      if (!Array.isArray(response?.items) && response?.items && !hasWarnedRunShape.current) {
+        console.warn('Expected runs response with items array, received:', response);
+        hasWarnedRunShape.current = true;
       }
-      setBackendStatus('offline');
-      return false;
+      const sortedRuns = [...runsData].sort((a, b) => getRunDateValue(b) - getRunDateValue(a));
+      setRuns(sortedRuns);
+      await buildDashboardStats(sortedRuns);
+      setBackendStatus('online');
+
+      // Auto-check checklist items based on runs
+      if (sortedRuns.length > 0) {
+        setChecklist(prev => ({
+          ...prev,
+          uploadLabel: true,
+          uploadTds: true,
+          chooseMarket: true,
+          runPreflight: true,
+        }));
+      }
     } catch (error) {
-      console.error('Health check failed:', error);
+      console.error('Error loading runs:', error);
       setBackendStatus('offline');
-      return false;
     }
   };
 
@@ -209,51 +221,15 @@ export default function DashboardPage() {
     const lastRun = sortedRuns[0] || null;
 
     const recentRuns = sortedRuns.slice(0, 14);
-    const reportResults = await Promise.allSettled(
-      recentRuns.map((run) => runAPI.getReport(run.run_id))
-    );
-
     const issuesByRunId = {};
-    let totalIssues = 0;
-    let issuesSamples = 0;
-    const failingChecksMap = {};
-
-    reportResults.forEach((result, index) => {
-      if (result.status !== 'fulfilled') return;
-      const run = recentRuns[index];
-      const reportData = result.value?.report ?? result.value;
-      const summary = reportData?.summary || {};
-      const checks = reportData?.checks || [];
-      const issuesCount = (summary.failed || 0) + (summary.warnings || 0);
-      issuesByRunId[run.run_id] = issuesCount;
-      totalIssues += issuesCount;
-      issuesSamples += 1;
-
-      checks.forEach((check) => {
-        const resultValue = (check.result || check.status || '').toUpperCase();
-        if (resultValue === 'FAIL' || resultValue === 'WARN') {
-          const key = check.id || check.title || 'unknown-check';
-          const title = check.title || check.id || 'Unknown check';
-          if (!failingChecksMap[key]) {
-            failingChecksMap[key] = { title, count: 0 };
-          }
-          failingChecksMap[key].count += 1;
-        }
-      });
-    });
-
-    const avgIssues = issuesSamples > 0
-      ? Math.round((totalIssues / issuesSamples) * 10) / 10
-      : 0;
+    const avgIssues = null;
     const trend = recentRuns.slice().reverse().map((run) => ({
       runId: run.run_id,
       verdict: run.verdict,
       score: run.score,
       label: run.product_name,
     }));
-    const topFailingChecks = Object.values(failingChecksMap)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
+    const topFailingChecks = [];
 
     setDashboardStats({
       runs7d,
@@ -270,44 +246,17 @@ export default function DashboardPage() {
 
   // Load runs from backend API
   useEffect(() => {
-    const fetchRuns = async () => {
-      try {
-        const response = await runAPI.list();
-        const runsData = Array.isArray(response?.items) ? response.items : [];
-        if (!Array.isArray(response?.items) && response?.items && !hasWarnedRunShape.current) {
-          console.warn('Expected runs response with items array, received:', response);
-          hasWarnedRunShape.current = true;
-        }
-        const sortedRuns = [...runsData].sort((a, b) => getRunDateValue(b) - getRunDateValue(a));
-        setRuns(sortedRuns);
-        await buildDashboardStats(sortedRuns);
-        
-        // Auto-check checklist items based on runs
-        if (sortedRuns.length > 0) {
-          setChecklist(prev => ({
-            ...prev,
-            uploadLabel: true,
-            uploadTds: true,
-            chooseMarket: true,
-            runPreflight: true,
-          }));
-        }
-      } catch (error) {
-        console.error('Error loading runs:', error);
-        // If API fails, backend might be down
-        setBackendStatus('offline');
-      }
-    };
-
-    // Check health first, then fetch runs
-    checkBackendHealth().then(() => fetchRuns());
+    if (loading || !token) {
+      return;
+    }
+    fetchRuns();
     
     // Load checklist from localStorage
     const storedChecklist = localStorage.getItem('ava_checklist');
     if (storedChecklist) {
       setChecklist(JSON.parse(storedChecklist));
     }
-  }, []);
+  }, [loading, token]);
 
   // Save checklist to localStorage
   const toggleChecklistItem = (key) => {
@@ -374,6 +323,21 @@ export default function DashboardPage() {
   // Checklist progress
   const checklistProgress = Object.values(checklist).filter(Boolean).length;
   const checklistTotal = Object.keys(checklist).length;
+
+  if (!loading && !token) {
+    return (
+      <div className="min-h-screen bg-[#070A12] flex flex-col items-center justify-center text-white px-4 text-center">
+        <XCircle className="h-12 w-12 text-rose-400 mb-4" />
+        <h1 className="text-xl font-semibold mb-2">Please sign in</h1>
+        <p className="text-white/60 mb-6 max-w-md">
+          You need to sign in to view your runs and dashboard stats.
+        </p>
+        <Button onClick={() => navigate('/signin')} className="bg-[#5B6CFF] hover:bg-[#4A5BEE]">
+          Go to Sign In
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#070A12] text-white flex">
@@ -488,7 +452,7 @@ export default function DashboardPage() {
                 </span>
                 {backendStatus === 'offline' && (
                   <button 
-                    onClick={checkBackendHealth}
+                    onClick={fetchRuns}
                     className="text-[#5B6CFF] hover:text-[#4A5BEE] text-xs ml-1"
                   >
                     Retry
@@ -528,7 +492,7 @@ export default function DashboardPage() {
             <KPITile
               icon={AlertCircle}
               label="Avg Issues"
-              value={runs.length > 0 ? dashboardStats.avgIssues : '—'}
+              value={runs.length > 0 ? (dashboardStats.avgIssues ?? '—') : '—'}
               color={runs.length === 0 ? 'muted' : 'default'}
             />
             <KPITile

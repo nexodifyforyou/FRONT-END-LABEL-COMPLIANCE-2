@@ -180,7 +180,7 @@ const VerdictBadge = ({ verdict }) => {
 export default function ReportPage() {
   const { runId } = useParams();
   const navigate = useNavigate();
-  const { isAdmin, creditsDisplay, deductCredits } = useAuth();
+  const { isAdmin, creditsDisplay, deductCredits, token, loading: authLoading } = useAuth();
   const [run, setRun] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
@@ -212,22 +212,50 @@ export default function ReportPage() {
         setRun(reportData);
       } catch (error) {
         console.error('Error loading report:', error);
-        setLoadError(error.message || 'Failed to load report');
+        const status = error?.response?.status;
+        if (status === 401) {
+          setLoadError('Please sign in');
+        } else if (status === 404) {
+          setLoadError('Report not found');
+        } else {
+          setLoadError(error.message || 'Failed to load report');
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    if (runId) {
+    if (!runId) {
+      setLoading(false);
+      setLoadError('Report not found');
+      return;
+    }
+
+    if (!authLoading && !token) {
+      setLoading(false);
+      setLoadError('Please sign in');
+      return;
+    }
+
+    if (runId && token) {
       fetchReport();
     }
-  }, [runId]);
+  }, [runId, token, authLoading]);
 
   // ============================================================================
   // APPLY CORRECTIONS HANDLER
   // POST /api/runs/:run_id/corrections then refetch report.json
   // ============================================================================
   const handleApplyCorrections = async () => {
+    if (!runId) {
+      setCorrectionsError('Report not found.');
+      return;
+    }
+
+    if (!token) {
+      setCorrectionsError('Please sign in to apply corrections.');
+      return;
+    }
     // Validation: corrections_text required, min 3 chars
     if (!correctionsText.trim() || correctionsText.trim().length < 3) {
       setCorrectionsError('Please enter at least 3 characters describing the corrections needed.');
