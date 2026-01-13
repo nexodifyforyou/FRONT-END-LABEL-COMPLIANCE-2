@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
@@ -152,7 +152,7 @@ const isPassVerdict = (verdict) => (verdict || '').toUpperCase() === 'PASS';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { user, wallet, credits, creditsDisplay, isAdmin, logout, token, loading } = useAuth();
+  const { user, wallet, credits, creditsDisplay, isAdmin, logout, token, loading, activeEmail } = useAuth();
   const [runs, setRuns] = useState([]);
   const [dashboardStats, setDashboardStats] = useState({
     runs7d: 0,
@@ -178,10 +178,14 @@ export default function DashboardPage() {
   const [backendStatus, setBackendStatus] = useState('unknown'); // 'unknown', 'checking', 'online', 'offline'
   const hasWarnedRunShape = useRef(false);
 
-  const fetchRuns = async () => {
+  const fetchRuns = useCallback(async () => {
+    if (!token) {
+      setBackendStatus('unknown');
+      return;
+    }
     setBackendStatus('checking');
     try {
-      const response = await runAPI.list();
+      const response = await runAPI.listRuns();
       const runsData = Array.isArray(response?.items) ? response.items : [];
       if (!Array.isArray(response?.items) && response?.items && !hasWarnedRunShape.current) {
         console.warn('Expected runs response with items array, received:', response);
@@ -206,7 +210,7 @@ export default function DashboardPage() {
       console.error('Error loading runs:', error);
       setBackendStatus('offline');
     }
-  };
+  }, [token]);
 
   const buildDashboardStats = async (runsData) => {
     const sortedRuns = [...runsData].sort((a, b) => getRunDateValue(b) - getRunDateValue(a));
@@ -256,7 +260,7 @@ export default function DashboardPage() {
     if (storedChecklist) {
       setChecklist(JSON.parse(storedChecklist));
     }
-  }, [loading, token]);
+  }, [loading, token, fetchRuns]);
 
   // Save checklist to localStorage
   const toggleChecklistItem = (key) => {
@@ -404,7 +408,7 @@ export default function DashboardPage() {
               )}
               <div className="flex-1 text-left min-w-0">
                 <div className="text-sm font-medium text-white/90 truncate">{user?.name}</div>
-                <div className="text-xs text-white/40 truncate">{user?.email}</div>
+                <div className="text-xs text-white/40 truncate">{activeEmail}</div>
               </div>
             </button>
 
@@ -412,6 +416,16 @@ export default function DashboardPage() {
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
                 <div className="absolute bottom-full left-0 right-0 mb-2 bg-[#0f1219] border border-white/[0.08] rounded-xl shadow-xl z-50 py-1">
+                  <div className="px-4 py-2 text-xs text-white/40">
+                    Signed in as <span className="text-white/80">{activeEmail || 'Unknown account'}</span>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full px-4 py-2 text-left text-sm text-white/70 hover:bg-white/[0.04] flex items-center gap-2"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Switch account
+                  </button>
                   <button
                     onClick={handleLogout}
                     className="w-full px-4 py-2 text-left text-sm text-white/70 hover:bg-white/[0.04] flex items-center gap-2"
@@ -436,6 +450,10 @@ export default function DashboardPage() {
               <p className="text-sm text-white/40">Welcome back{user?.name ? `, ${user.name.split(' ')[0]}` : ''}</p>
             </div>
             <div className="flex items-center gap-3">
+              <div className="hidden lg:flex flex-col items-end text-right">
+                <span className="text-xs text-white/40">Signed in as</span>
+                <span className="text-sm text-white/80">{activeEmail || 'Unknown account'}</span>
+              </div>
               {/* Backend Status */}
               <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.02] border border-white/[0.08] rounded-full">
                 <div className={`h-2 w-2 rounded-full ${

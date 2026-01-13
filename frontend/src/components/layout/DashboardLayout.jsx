@@ -35,14 +35,14 @@ const navigation = [
 ];
 
 export function DashboardLayout({ children }) {
-  const { user, credits, logout, isAdmin } = useAuth();
+  const { user, credits, logout, isAdmin, activeEmail } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate('/signin');
   };
 
   return (
@@ -152,7 +152,7 @@ export function DashboardLayout({ children }) {
                 <div className="text-sm font-medium text-white truncate">
                   {user?.name || user?.email}
                 </div>
-                <div className="text-xs text-slate-400 truncate">{user?.email}</div>
+                <div className="text-xs text-slate-400 truncate">{activeEmail}</div>
               </div>
             </div>
           </div>
@@ -178,6 +178,11 @@ export function DashboardLayout({ children }) {
             <span className="text-sm font-medium text-slate-700">{formatCredits(credits)}</span>
           </div>
 
+          <div className="hidden md:flex flex-col items-end mr-4">
+            <span className="text-xs text-slate-400">Signed in as</span>
+            <span className="text-sm text-slate-700">{activeEmail || 'Unknown account'}</span>
+          </div>
+
           {/* User Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -191,7 +196,7 @@ export function DashboardLayout({ children }) {
             <DropdownMenuContent align="end" className="w-56">
               <div className="px-2 py-1.5">
                 <div className="text-sm font-medium">{user?.name || 'User'}</div>
-                <div className="text-xs text-muted-foreground">{user?.email}</div>
+                <div className="text-xs text-muted-foreground">{activeEmail}</div>
               </div>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
@@ -205,6 +210,11 @@ export function DashboardLayout({ children }) {
                   <CreditCard className="mr-2 h-4 w-4" />
                   Billing
                 </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                <LogOut className="mr-2 h-4 w-4" />
+                Switch account
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

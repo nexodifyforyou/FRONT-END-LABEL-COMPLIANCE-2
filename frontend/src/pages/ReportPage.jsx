@@ -180,7 +180,7 @@ const VerdictBadge = ({ verdict }) => {
 export default function ReportPage() {
   const { runId } = useParams();
   const navigate = useNavigate();
-  const { isAdmin, creditsDisplay, deductCredits, token, loading: authLoading } = useAuth();
+  const { isAdmin, creditsDisplay, deductCredits, token, loading: authLoading, logout, activeEmail } = useAuth();
   const [run, setRun] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
@@ -199,6 +199,11 @@ export default function ReportPage() {
   // Toast notification state
   const [toast, setToast] = useState(null);
 
+  const handleSwitchAccount = () => {
+    logout();
+    navigate('/signin');
+  };
+
   // ============================================================================
   // FETCH REPORT DATA
   // Loads report.json from backend, includes corrections array if present
@@ -211,13 +216,13 @@ export default function ReportPage() {
         const reportData = await runAPI.getReport(runId);
         setRun(reportData);
       } catch (error) {
-        console.error('Error loading report:', error);
         const status = error?.response?.status;
         if (status === 401) {
           setLoadError('Please sign in');
         } else if (status === 404) {
           setLoadError('Report not found');
         } else {
+          console.error('Error loading report:', error);
           setLoadError(error.message || 'Failed to load report');
         }
       } finally {
@@ -453,6 +458,17 @@ export default function ReportPage() {
               <span className="text-lg font-semibold text-white/95">Nexodify</span>
             </Link>
             <div className="flex items-center gap-3">
+              <div className="hidden md:flex flex-col items-end text-right">
+                <span className="text-xs text-white/40">Signed in as</span>
+                <span className="text-sm text-white/80">{activeEmail || 'Unknown account'}</span>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={handleSwitchAccount}
+                className="text-white/70 hover:text-white hover:bg-white/[0.06]"
+              >
+                Switch account
+              </Button>
               <Link to="/dashboard">
                 <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/[0.06]">
                   <ArrowLeft className="mr-2 h-4 w-4" />
