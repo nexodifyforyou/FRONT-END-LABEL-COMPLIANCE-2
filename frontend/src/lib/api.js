@@ -80,6 +80,12 @@ export const runAPI = {
     const response = await api.get('/api/runs', { params });
     return response.data;
   },
+
+  // GET /api/runs (alias for consistency)
+  listRuns: async (params = {}) => {
+    const response = await api.get('/api/runs', { params });
+    return response.data;
+  },
   
   // GET /api/runs/:run_id/report.json
   getReport: async (runId) => {

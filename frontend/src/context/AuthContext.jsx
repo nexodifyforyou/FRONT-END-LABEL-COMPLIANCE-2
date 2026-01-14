@@ -31,6 +31,7 @@ export function AuthProvider({ children }) {
   // Get credits display
   const credits = isAdmin ? Infinity : (wallet?.credits_available || 0);
   const creditsDisplay = isAdmin ? 'Unlimited' : (wallet?.credits_available || 0);
+  const activeEmail = user?.email || null;
 
   // Load auth from localStorage on mount
   useEffect(() => {
@@ -216,6 +217,7 @@ export function AuthProvider({ children }) {
     wallet,
     credits,
     creditsDisplay,
+    activeEmail,
     loading,
     isAuthenticated: !!user && !!token,
     isAdmin,
