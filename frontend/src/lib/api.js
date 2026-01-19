@@ -122,6 +122,12 @@ export const runAPI = {
     const response = await api.get(url, { responseType: 'blob' });
     return response.data;
   },
+
+  // GET /health
+  healthCheck: async () => {
+    const response = await api.get('/health');
+    return response.data;
+  },
 };
 
 // Billing endpoints

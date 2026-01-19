@@ -175,7 +175,7 @@ export default function DashboardPage() {
     downloadPdf: false,
     saveTemplate: false,
   });
-  const [backendStatus, setBackendStatus] = useState('unknown'); // 'unknown', 'checking', 'online', 'offline'
+  const [backendStatus, setBackendStatus] = useState('unknown'); // 'unknown', 'checking', 'online', 'offline', 'unauthorized'
   const hasWarnedRunShape = useRef(false);
 
   const fetchRuns = useCallback(async () => {
@@ -208,7 +208,20 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error('Error loading runs:', error);
-      setBackendStatus('offline');
+      const status = error?.response?.status;
+      if (status === 401) {
+        setBackendStatus('unauthorized');
+        return;
+      }
+      const isNetworkError = !error?.response
+        || error?.code === 'ECONNREFUSED'
+        || error?.code === 'ECONNABORTED'
+        || error?.code === 'ETIMEDOUT';
+      if (isNetworkError || (status && status >= 500)) {
+        setBackendStatus('offline');
+      } else {
+        setBackendStatus('unknown');
+      }
     }
   }, [token]);
 
@@ -261,6 +274,29 @@ export default function DashboardPage() {
       setChecklist(JSON.parse(storedChecklist));
     }
   }, [loading, token, fetchRuns]);
+
+  useEffect(() => {
+    if (!token) {
+      return undefined;
+    }
+
+    const checkHealth = async () => {
+      try {
+        const health = await runAPI.healthCheck();
+        const isOk = health?.ok === true || health?.status === 'ok' || health?.status === 'healthy';
+        if (isOk) {
+          setBackendStatus((prev) => (prev === 'offline' ? 'online' : prev));
+        }
+      } catch (error) {
+        // Ignore health check errors; fetchRuns handles status updates.
+      }
+    };
+
+    const intervalId = setInterval(checkHealth, 15000);
+    checkHealth();
+
+    return () => clearInterval(intervalId);
+  }, [token]);
 
   // Save checklist to localStorage
   const toggleChecklistItem = (key) => {
@@ -458,12 +494,14 @@ export default function DashboardPage() {
               <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.02] border border-white/[0.08] rounded-full">
                 <div className={`h-2 w-2 rounded-full ${
                   backendStatus === 'online' ? 'bg-emerald-400' :
+                  backendStatus === 'unauthorized' ? 'bg-amber-400' :
                   backendStatus === 'offline' ? 'bg-rose-400' :
                   backendStatus === 'checking' ? 'bg-amber-400 animate-pulse' :
                   'bg-white/30'
                 }`} />
                 <span className="text-xs text-white/60">
                   {backendStatus === 'online' ? 'Backend Online' :
+                   backendStatus === 'unauthorized' ? 'Auth required / session expired' :
                    backendStatus === 'offline' ? 'Backend Offline' :
                    backendStatus === 'checking' ? 'Checking...' :
                    'Unknown'}
@@ -474,6 +512,14 @@ export default function DashboardPage() {
                     className="text-[#5B6CFF] hover:text-[#4A5BEE] text-xs ml-1"
                   >
                     Retry
+                  </button>
+                )}
+                {backendStatus === 'unauthorized' && (
+                  <button
+                    onClick={() => navigate('/signin')}
+                    className="text-[#5B6CFF] hover:text-[#4A5BEE] text-xs ml-1"
+                  >
+                    Go to Sign In
                   </button>
                 )}
               </div>
