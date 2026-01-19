@@ -4,7 +4,7 @@ import axios from 'axios';
 
 // API Base URL - fallback to VM backend
 export const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "https://api.nexodify.com";
+  process.env.REACT_APP_API_BASE_URL ?? "https://api.nexodify.com";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
