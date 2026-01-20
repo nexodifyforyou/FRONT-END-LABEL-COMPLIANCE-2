@@ -42,7 +42,8 @@ import {
   Plus,
   X,
 } from 'lucide-react';
-import { getSeverityColor, HALAL_CHECK_DEFINITIONS } from '../lib/checkDefinitions';
+import { getSeverityColor } from '../lib/checkDefinitions';
+import { HALAL_CHECK_DEFINITIONS } from '../lib/halalChecks';
 import { runAPI, API_BASE_URL } from '../lib/api';
 
 // ============================================================================
@@ -89,8 +90,8 @@ const SeverityBadge = ({ level }) => {
   );
 };
 
-// Finding Card for EU checks
-const FindingCard = ({ title, severity, source, description, reference, safeString }) => {
+// Finding Card for Issues Overview
+const FindingCard = ({ title, severity, source, fix, safeString }) => {
   const StatusIcon = severity === 'critical' || severity === 'high' ? XCircle : severity === 'warning' || severity === 'medium' ? AlertTriangle : CheckCircle;
   const statusColor = severity === 'critical' || severity === 'high' ? 'text-rose-400' : severity === 'warning' || severity === 'medium' ? 'text-amber-400' : 'text-emerald-400';
   
@@ -108,47 +109,38 @@ const FindingCard = ({ title, severity, source, description, reference, safeStri
               </span>
             )}
           </div>
-          {description && <p className="text-white/55 text-sm mb-1">{safeString(description, '')}</p>}
-          {reference && <p className="text-white/30 text-xs">Ref: {safeString(reference, '')}</p>}
+          {fix && <p className="text-white/55 text-sm">{safeString(fix, '')}</p>}
         </div>
       </div>
     </div>
   );
 };
 
-// Halal Check Card - special styling for Halal module
+// Halal Check Card - matches sample layout
 const HalalCheckCard = ({ check, safeString }) => {
-  const colors = getSeverityColor(check.status);
-  const StatusIcon = check.status === 'critical' ? XCircle : 
-                     check.status === 'warning' ? AlertTriangle : 
-                     check.status === 'pass' ? CheckCircle : Circle;
+  const colors = getSeverityColor(check.severity || check.status);
+  const StatusIcon = check.status === 'critical'
+    ? XCircle
+    : check.status === 'warning'
+      ? AlertTriangle
+      : check.status === 'pass'
+        ? CheckCircle
+        : Circle;
   
   return (
-    <div className={`bg-emerald-500/[0.03] border border-emerald-500/20 rounded-xl p-4 hover:border-emerald-500/30 transition-all`}>
+    <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4">
       <div className="flex items-start gap-3">
         <StatusIcon className={`h-5 w-5 mt-0.5 ${colors.text} flex-shrink-0`} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center flex-wrap gap-2 mb-2">
             <span className="text-white/90 font-medium">{safeString(check.title, 'Untitled check')}</span>
-            <SeverityBadge level={check.status} />
-            <span className="text-xs text-emerald-400/70 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-              {safeString(check.category, 'General')}
+            <SeverityBadge level={check.severity || check.status} />
+            <span className="text-xs text-[#5B6CFF] bg-[#5B6CFF]/10 px-2 py-0.5 rounded-full border border-[#5B6CFF]/30">
+              {safeString(check.source, 'N/A')}
             </span>
           </div>
-          <p className="text-white/55 text-sm mb-2">{safeString(check.description, '')}</p>
-          {check.status !== 'pass' && check.status !== 'not_evaluated' && (
-            <div className="mt-2 p-2 bg-white/[0.02] rounded-lg">
-              <p className="text-xs text-amber-400/80 mb-1">
-                <strong>Why it matters:</strong> {safeString(check.whyItMatters, '')}
-              </p>
-              <p className="text-xs text-emerald-400/80">
-                <strong>What to provide:</strong> {safeString(check.whatToProvide, '')}
-              </p>
-            </div>
-          )}
-          {check.status === 'not_evaluated' && (
-            <p className="text-xs text-white/40 italic">Not evaluated / Missing info</p>
-          )}
+          <p className="text-white/55 text-sm mb-1">{safeString(check.detail, '')}</p>
+          <p className="text-white/40 text-xs">Fix: {safeString(check.fix, '')}</p>
         </div>
       </div>
     </div>
@@ -419,8 +411,11 @@ export default function ReportPage() {
   }
 
   // Derive data from run
-  const complianceScore = safeNumber(run?.compliance_score, 0);
-  const evidenceConfidence = safeNumber(run?.evidence_confidence, 0);
+  const complianceScore = safeNumber(run?.compliance_score ?? run?.score, 0);
+  const evidenceConfidence = safeNumber(
+    run?.evidence_confidence ?? run?.evidence_confidence_percent,
+    0
+  );
   const verdict = typeof run?.verdict === 'string' ? run.verdict : safeString(run?.verdict, 'CONDITIONAL');
   const runIdDisplay = safeString(run?.run_id, runId || 'Unknown');
   const generatedAt = run?.ts ? new Date(run.ts) : null;
@@ -428,13 +423,53 @@ export default function ReportPage() {
     ? generatedAt.toLocaleString()
     : 'Unknown time';
   const scoreColor = complianceScore >= 85 ? 'text-emerald-400' : complianceScore >= 70 ? 'text-amber-400' : 'text-rose-400';
-  const euChecks = Array.isArray(run?.checks) ? run.checks : [];
+  const product = run?.product || {
+    product_name: run?.product_name,
+    company_name: run?.company_name,
+    country_of_sale: run?.country_of_sale,
+    languages_provided: run?.languages_provided,
+    halal_enabled: run?.halal,
+  };
+  const summary = run?.summary || {};
+  const findings = Array.isArray(run?.findings) ? run.findings : [];
+  const crossCheck = run?.cross_check || { matched: [], mismatched: [] };
+  const printPack = run?.print_pack || {};
+  const nextSteps = Array.isArray(run?.next_steps) ? run.next_steps : [];
+  const artifacts = run?.artifacts || { run_dir: '', files: [] };
   const halalChecks = Array.isArray(run?.halalChecks) ? run.halalChecks : [];
+  const halalEnabled = !!(product?.halal_enabled ?? run?.halal);
   const corrections = Array.isArray(run?.corrections) ? run.corrections : [];
   
-  const criticalCount = [...euChecks, ...halalChecks].filter(c => c.status === 'critical').length;
-  const warningCount = [...euChecks, ...halalChecks].filter(c => c.status === 'warning').length;
-  const passCount = [...euChecks, ...halalChecks].filter(c => c.status === 'pass').length;
+  const criticalCount = safeNumber(
+    summary.critical,
+    findings.filter((c) => c.status === 'critical').length
+  );
+  const warningCount = safeNumber(
+    summary.warnings,
+    findings.filter((c) => c.status === 'warning').length
+  );
+  const passCount = safeNumber(summary.passed, 0);
+  const issuesTotal = safeNumber(summary.issues_total, findings.length);
+  const evidenceFindings = findings.filter((f) => f.status === 'critical').length
+    ? findings.filter((f) => f.status === 'critical')
+    : findings.filter((f) => f.status === 'warning');
+  const halalCertificateCheck = halalChecks.find((c) => c.id === 'halal_certificate_provided');
+  const halalInputs = halalEnabled
+    ? [
+        { label: 'Supplier TDS', tone: 'success' },
+        {
+          label:
+            halalCertificateCheck?.status === 'pass'
+              ? 'Halal Certificate'
+              : 'Halal Certificate (not provided)',
+          tone: halalCertificateCheck?.status === 'pass' ? 'success' : 'warning',
+        },
+        {
+          label: `Target Market: ${safeString(product.country_of_sale, 'N/A')}`,
+          tone: 'neutral',
+        },
+      ]
+    : [];
 
   return (
     <div className="min-h-screen bg-[#070A12] text-white">
@@ -495,7 +530,7 @@ export default function ReportPage() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
             <div className="flex items-center gap-3 mb-4">
               <VerdictBadge verdict={verdict} />
-              {run.halal && (
+              {halalEnabled && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
                   <Moon className="h-3.5 w-3.5" />
                   Halal
@@ -552,11 +587,11 @@ export default function ReportPage() {
                 <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-5">
                   <div className="text-xs text-white/40 uppercase tracking-wider mb-4">Product Information</div>
                   {[
-                    ['Product Name', run.product_name],
-                    ['Company', run.company_name],
-                    ['Country of Sale', run.country_of_sale],
-                    ['Languages', run.languages_provided || 'English'],
-                    ['Halal Module', run.halal ? 'Enabled' : 'Disabled'],
+                    ['Product Name', product.product_name],
+                    ['Company', product.company_name],
+                    ['Country of Sale', product.country_of_sale],
+                    ['Languages', product.languages_provided || 'English'],
+                    ['Halal Module', halalEnabled ? 'Enabled' : 'Disabled'],
                   ].map(([label, value]) => (
                     <div key={label} className="flex justify-between py-2 border-b border-white/[0.04] last:border-0">
                       <span className="text-white/50 text-sm">{label}</span>
@@ -592,181 +627,136 @@ export default function ReportPage() {
               </div>
             </div>
 
-            {/* ================================================================
-                CORRECTIONS & RE-RUN PANEL
-                Shows previous corrections and form to apply new corrections
-                This section appears ABOVE the checks list as per requirements
-                ================================================================ */}
-            <div className="p-8 border-b border-white/[0.06]">
-              {/* Section Header - Collapsible */}
-              <button
-                onClick={() => setShowCorrectionsPanel(!showCorrectionsPanel)}
-                className="w-full flex items-center justify-between mb-6"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 bg-amber-500/10 text-amber-400 text-xs font-medium rounded-full border border-amber-500/30">
-                    <Edit3 className="inline h-3 w-3 mr-1" />
-                    Corrections
-                  </span>
-                  <span className="text-white/50 text-sm">Corrections & Re-run</span>
-                  {corrections.length > 0 && (
-                    <span className="px-2 py-0.5 bg-[#5B6CFF]/20 text-[#5B6CFF] text-xs rounded-full">
-                      {corrections.length} applied
-                    </span>
-                  )}
-                </div>
-                {showCorrectionsPanel ? (
-                  <ChevronUp className="h-5 w-5 text-white/40" />
-                ) : (
-                  <ChevronDown className="h-5 w-5 text-white/40" />
-                )}
-              </button>
-
-              {showCorrectionsPanel && (
-                <div className="space-y-6">
-                  {/* Previous Corrections List */}
-                  {corrections.length > 0 && (
-                    <div className="space-y-3">
-                      <Label className="text-white/60 text-xs uppercase tracking-wider">Previous Corrections</Label>
-                      <div className="space-y-2 max-h-64 overflow-y-auto">
-                        {corrections.map((correction, idx) => (
-                          <div 
-                            key={idx} 
-                            className="bg-white/[0.02] border border-white/[0.06] rounded-lg p-4"
-                          >
-                            <div className="flex items-center gap-2 mb-2">
-                              <MessageSquare className="h-4 w-4 text-[#5B6CFF]" />
-                              <span className="text-xs text-white/40">
-                                {formatCorrectionDate(correction.created_at)}
-                              </span>
-                            </div>
-                            <p className="text-white/80 text-sm">{safeString(correction.corrections_text, '')}</p>
-                            {correction.override_fields_json && correction.override_fields_json !== '{}' && (
-                              <div className="mt-2 pt-2 border-t border-white/[0.06]">
-                                <span className="text-xs text-white/40">Override fields: </span>
-                                <code className="text-xs text-amber-400/80 bg-amber-500/10 px-1 rounded">
-                                  {safeString(correction.override_fields_json, '')}
-                                </code>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* New Correction Form */}
-                  <div className="bg-white/[0.02] border border-white/[0.08] rounded-xl p-5 space-y-4">
-                    <div className="flex items-center gap-2">
-                      <Plus className="h-4 w-4 text-emerald-400" />
-                      <Label className="text-white/80 text-sm font-medium">Apply New Correction</Label>
-                    </div>
-
-                    {/* Corrections Text Input */}
-                    <div className="space-y-2">
-                      <Label htmlFor="corrections-text" className="text-white/60 text-xs">
-                        What should be corrected? <span className="text-rose-400">*</span>
-                      </Label>
-                      <Textarea
-                        id="corrections-text"
-                        value={correctionsText}
-                        onChange={(e) => setCorrectionsText(e.target.value)}
-                        placeholder="E.g., 'Update allergen emphasis for milk and hazelnuts. Correct QUID percentage for cocoa.'"
-                        className="min-h-[100px] bg-white/[0.04] border-white/[0.12] text-white placeholder:text-white/30 focus:border-[#5B6CFF] resize-none text-sm"
-                      />
-                      <p className="text-white/30 text-xs">Minimum 3 characters required</p>
-                    </div>
-
-                    {/* Languages Override (Optional) - Collapsible */}
-                    <div className="border border-white/[0.06] rounded-lg overflow-hidden">
-                      <button
-                        onClick={() => setShowOverrides(!showOverrides)}
-                        className="w-full px-4 py-2.5 flex items-center justify-between bg-white/[0.02] hover:bg-white/[0.04] transition-colors text-left"
-                      >
-                        <span className="text-xs text-white/60">Override fields (optional)</span>
-                        {showOverrides ? (
-                          <ChevronUp className="h-4 w-4 text-white/40" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4 text-white/40" />
-                        )}
-                      </button>
-                      {showOverrides && (
-                        <div className="p-4 border-t border-white/[0.06] space-y-3">
-                          <div className="space-y-1.5">
-                            <Label htmlFor="languages-override" className="text-white/60 text-xs">
-                              Languages (comma-separated)
-                            </Label>
-                            <Input
-                              id="languages-override"
-                              value={languagesOverride}
-                              onChange={(e) => setLanguagesOverride(e.target.value)}
-                              placeholder="e.g., English, Italian, German"
-                              className="bg-white/[0.04] border-white/[0.12] text-white placeholder:text-white/30 text-sm"
-                            />
-                            <p className="text-white/30 text-xs">
-                              Current: {safeString(run.languages_provided, 'Not specified')}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Error Display */}
-                    {correctionsError && (
-                      <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-lg flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-rose-400 flex-shrink-0" />
-                        <span className="text-rose-400 text-sm">{correctionsError}</span>
-                      </div>
-                    )}
-
-                    {/* Apply Button */}
-                    <Button
-                      onClick={handleApplyCorrections}
-                      disabled={isApplyingCorrections || correctionsText.trim().length < 3}
-                      className="w-full bg-[#5B6CFF] hover:bg-[#4A5BEE] text-white h-10 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isApplyingCorrections ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Applying corrections...
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw className="mr-2 h-4 w-4" />
-                          Apply corrections
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Page 2: EU Findings Overview */}
+            {/* Page 2: Findings Overview */}
             <div className="p-8 border-b border-white/[0.06]">
               <div className="flex items-center gap-2 mb-6">
                 <span className="px-3 py-1 bg-[#5B6CFF]/10 text-[#5B6CFF] text-xs font-medium rounded-full border border-[#5B6CFF]/30">
                   Page 2
                 </span>
-                <span className="text-white/50 text-sm">EU 1169/2011 Findings</span>
+                <span className="text-white/50 text-sm">Findings Overview</span>
               </div>
 
               <h3 className="text-xl font-semibold text-white/90 mb-6">
-                {euChecks.length} EU Compliance Checks
+                {issuesTotal} Issues Identified
               </h3>
 
               <div className="grid md:grid-cols-2 gap-3">
-                {euChecks.map((check, i) => (
-                  <FindingCard
-                    key={i}
-                    title={check.title}
-                    severity={check.status}
-                    source={check.source}
-                    description={check.description}
-                    reference={check.reference}
-                    safeString={safeString}
-                  />
-                ))}
+                {findings.length > 0 ? (
+                  findings.map((finding, i) => (
+                    <FindingCard
+                      key={finding.id || i}
+                      title={finding.title}
+                      severity={finding.status}
+                      source={finding.source}
+                      fix={finding.fix}
+                      safeString={safeString}
+                    />
+                  ))
+                ) : (
+                  <div className="text-white/50 text-sm">No issues identified.</div>
+                )}
+              </div>
+            </div>
+
+            {/* Pages 3-4: Evidence & Fix Details */}
+            <div className="p-8 border-b border-white/[0.06]">
+              <div className="flex items-center gap-2 mb-6">
+                <span className="px-3 py-1 bg-[#5B6CFF]/10 text-[#5B6CFF] text-xs font-medium rounded-full border border-[#5B6CFF]/30">
+                  Pages 3-4
+                </span>
+                <span className="text-white/50 text-sm">Evidence & Fix Details</span>
+              </div>
+
+              <div className="space-y-4">
+                {evidenceFindings.length > 0 ? (
+                  evidenceFindings.map((finding, idx) => (
+                    <div key={finding.id || idx} className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <SeverityBadge level={finding.status} />
+                        <span className="text-white/90 font-semibold">{safeString(finding.title, '')}</span>
+                      </div>
+
+                      <div className="bg-[#0B1020] border border-white/[0.08] rounded-lg p-4 mb-4">
+                        <div className="text-xs text-white/40 uppercase tracking-wider mb-2">Evidence (excerpt)</div>
+                        {Array.isArray(finding.evidence) && finding.evidence.length > 0 ? (
+                          <div className="space-y-3">
+                            {finding.evidence.map((entry, evIdx) => (
+                              <div key={evIdx}>
+                                <p className="text-white/70 text-sm italic">"{safeString(entry.excerpt, '')}"</p>
+                                <p className="text-white/40 text-xs mt-1">
+                                  ↳ {safeString(entry.source, 'Source')}
+                                  {entry.page ? ` · Page ${entry.page}` : ''}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-white/50 text-sm">No evidence excerpts available.</p>
+                        )}
+                      </div>
+
+                      <div className="bg-white/[0.02] border border-white/[0.06] rounded-lg p-4">
+                        <div className="text-xs text-white/40 uppercase tracking-wider mb-2">Recommended Fix</div>
+                        <p className="text-white/70 text-sm">{safeString(finding.fix, 'No fix provided')}</p>
+                      </div>
+
+                      <p className="text-white/40 text-xs mt-4">
+                        Reference: {safeString(finding.reference, '')}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-white/50 text-sm">No critical findings available for evidence review.</div>
+                )}
+              </div>
+            </div>
+
+            {/* Page 5: Label ↔ TDS Cross-Check */}
+            <div className="p-8 border-b border-white/[0.06]">
+              <div className="flex items-center gap-2 mb-6">
+                <span className="px-3 py-1 bg-[#5B6CFF]/10 text-[#5B6CFF] text-xs font-medium rounded-full border border-[#5B6CFF]/30">
+                  Page 5
+                </span>
+                <span className="text-white/50 text-sm">Label ↔ TDS Cross-Check</span>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-5">
+                  <h4 className="text-white/90 font-semibold mb-4 flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-emerald-400" />
+                    Matched ({Array.isArray(crossCheck.matched) ? crossCheck.matched.length : 0})
+                  </h4>
+                  {Array.isArray(crossCheck.matched) && crossCheck.matched.length > 0 ? (
+                    crossCheck.matched.map((item) => (
+                      <div key={item.field} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
+                        <span className="text-white/60 text-sm">{safeString(item.field, '')}</span>
+                        <span className="text-emerald-400 text-xs">✓ Match</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-white/50 text-sm">No matched fields detected.</p>
+                  )}
+                </div>
+
+                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-5">
+                  <h4 className="text-white/90 font-semibold mb-4 flex items-center gap-2">
+                    <XCircle className="h-4 w-4 text-rose-400" />
+                    Mismatched ({Array.isArray(crossCheck.mismatched) ? crossCheck.mismatched.length : 0})
+                  </h4>
+                  {Array.isArray(crossCheck.mismatched) && crossCheck.mismatched.length > 0 ? (
+                    crossCheck.mismatched.map((item) => (
+                      <div key={item.field} className="py-2 border-b border-white/[0.04] last:border-0">
+                        <div className="flex items-center justify-between">
+                          <span className="text-white/60 text-sm">{safeString(item.field, '')}</span>
+                          <span className="text-rose-400 text-xs">Mismatch</span>
+                        </div>
+                        <span className="text-amber-400/70 text-xs">⚠ {safeString(item.note, '')}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-white/50 text-sm">No mismatches detected.</p>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -795,13 +785,13 @@ export default function ReportPage() {
             </div>
 
             {/* Print Verification Pack */}
-            <div className="p-8 border-b border-white/[0.06]">
+            <div className="p-8 border-b border-white/[0.06]" id="print-verification">
               <div className="flex items-center gap-2 mb-6">
                 <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-medium rounded-full border border-emerald-500/30">
                   <Printer className="inline h-3 w-3 mr-1" />
                   Print Pack
                 </span>
-                <span className="text-white/50 text-sm">Print Verification Pack</span>
+                <span className="text-white/50 text-sm">Print Verification Pack (Pre-Press Checklist)</span>
               </div>
 
               <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-6 mb-6">
@@ -810,33 +800,23 @@ export default function ReportPage() {
                   Versioning & Sign-off
                 </h4>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  {[
-                    ['Label Version ID', ''],
-                    ['Artwork File Name', ''],
-                    ['Print Vendor', ''],
-                    ['Approval Owner (QA)', ''],
-                    ['Date', ''],
-                    ['Signature', ''],
-                  ].map(([label]) => (
+                  {(printPack.signoff_fields || []).map((label) => (
                     <div key={label} className="flex flex-col gap-1">
                       <span className="text-white/50 text-xs">{label}</span>
                       <div className="h-8 border-b border-white/20 border-dashed"></div>
                     </div>
                   ))}
                 </div>
+                <div className="mt-4">
+                  <span className="text-white/50 text-xs">Final Print Run Notes</span>
+                  <div className="h-16 border border-white/10 border-dashed rounded mt-1"></div>
+                </div>
               </div>
 
-              <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-6">
+              <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-6 mb-6">
                 <h4 className="text-white/90 font-semibold mb-4">Pre-Press Checklist</h4>
                 <div className="space-y-3">
-                  {[
-                    'Mandatory particulars fully in target language',
-                    'Allergen emphasis applied consistently',
-                    'QUID declared where required',
-                    'Net quantity format correct',
-                    'Nutrition declaration complete',
-                    'Operator name + full address present',
-                  ].map((item, i) => (
+                  {(printPack.prepress_checklist || []).map((item, i) => (
                     <div key={i} className="flex items-start gap-3">
                       <div className="w-5 h-5 border border-white/20 rounded flex-shrink-0 mt-0.5"></div>
                       <span className="text-white/70 text-sm">{item}</span>
@@ -844,60 +824,153 @@ export default function ReportPage() {
                   ))}
                 </div>
               </div>
+
+              <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-6 mb-6">
+                <h4 className="text-white/90 font-semibold mb-4">What to Send to Printer</h4>
+                <div className="space-y-3">
+                  {(printPack.attachments_checklist || []).map((item, i) => (
+                    <div key={i} className="flex items-start gap-3">
+                      <div className="w-5 h-5 border border-white/20 rounded flex-shrink-0 mt-0.5"></div>
+                      <span className="text-white/70 text-sm">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4">
+                <h4 className="text-amber-400 font-semibold text-sm mb-2">Printer Notes</h4>
+                <p className="text-white/60 text-sm">
+                  {safeString(printPack.printer_notes, '')}
+                </p>
+              </div>
             </div>
 
-            {/* Halal Section - CRITICAL: Uses shared check definitions */}
-            {run.halal && (
-              <div className="p-8 border-b border-white/[0.06]">
+            {/* Halal Export-Readiness Preflight */}
+            {halalEnabled && (
+              <div className="p-8 border-b border-white/[0.06]" id="halal-preflight">
                 <div className="flex items-center gap-2 mb-6">
                   <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-medium rounded-full border border-emerald-500/30">
-                    <Moon className="inline h-3 w-3 mr-1" />
-                    Halal Module
+                    Optional Module
                   </span>
                   <span className="text-white/50 text-sm">Halal Export-Readiness Preflight</span>
                 </div>
 
                 <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 mb-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-emerald-400 font-medium">Halal Export-Readiness Checks</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-emerald-400 font-medium">Module Status</span>
                     <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs rounded border border-emerald-500/30">
-                      {halalChecks.length} Checks
+                      Active
                     </span>
                   </div>
-                  <p className="text-white/50 text-sm">
-                    Preflight Label + Supplier TDS to flag missing certificates, high-risk ingredients, and documentation gaps.
-                  </p>
                 </div>
 
-                {/* Halal Checks - Using shared definitions */}
-                <div className="space-y-3">
+                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-5 mb-6">
+                  <h4 className="text-white/90 font-semibold mb-4">Inputs Provided</h4>
+                  <div className="flex flex-wrap gap-3">
+                    {halalInputs.map((item) => (
+                      <span
+                        key={item.label}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm ${
+                          item.tone === 'success'
+                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                            : item.tone === 'warning'
+                              ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                              : 'bg-white/[0.04] text-white/60 border-white/[0.08]'
+                        }`}
+                      >
+                        {item.tone === 'success' ? (
+                          <CheckCircle className="h-3.5 w-3.5" />
+                        ) : item.tone === 'warning' ? (
+                          <AlertTriangle className="h-3.5 w-3.5" />
+                        ) : (
+                          <Circle className="h-3.5 w-3.5" />
+                        )}
+                        {item.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3 mb-6">
+                  <h4 className="text-white/90 font-semibold">Halal Preflight Checks (10)</h4>
                   {halalChecks.length > 0 ? (
-                    halalChecks.map((check, i) => (
-                      <HalalCheckCard key={i} check={check} safeString={safeString} />
+                    halalChecks.map((check) => (
+                      <HalalCheckCard key={check.id} check={check} safeString={safeString} />
                     ))
                   ) : (
-                    // Fallback: Show all checks as not_evaluated
-                    HALAL_CHECK_DEFINITIONS.map((check, i) => (
-                      <HalalCheckCard key={i} check={{ ...check, status: 'not_evaluated' }} safeString={safeString} />
+                    HALAL_CHECK_DEFINITIONS.map((check) => (
+                      <HalalCheckCard
+                        key={check.id}
+                        check={{
+                          ...check,
+                          status: 'not_evaluated',
+                          severity: check.defaultSeverity,
+                          detail: check.detailMissing,
+                        }}
+                        safeString={safeString}
+                      />
                     ))
                   )}
                 </div>
 
-                {/* Disclaimer */}
-                <div className="mt-6 p-4 bg-amber-500/5 border border-amber-500/20 rounded-xl">
-                  <p className="text-amber-400/80 text-xs">
-                    <strong>Important:</strong> Halal determinations depend on target market and certification body. 
-                    This module provides preflight risk flags, not certification.
+                <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4">
+                  <p className="text-amber-400/90 text-sm">
+                    <strong>Important:</strong> Halal determinations depend on the target market, accepted standard, and certification body. This module provides preflight risk flags, not certification.
                   </p>
                 </div>
               </div>
             )}
 
+            {/* Next Steps & Audit Trail */}
+            <div className="p-8">
+              <div className="flex items-center gap-2 mb-6">
+                <span className="px-3 py-1 bg-[#5B6CFF]/10 text-[#5B6CFF] text-xs font-medium rounded-full border border-[#5B6CFF]/30">
+                  Page 6
+                </span>
+                <span className="text-white/50 text-sm">Next Steps & Audit Trail</span>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-5">
+                  <h4 className="text-white/90 font-semibold mb-4">Next Steps Checklist</h4>
+                  {nextSteps.length > 0 ? (
+                    nextSteps.map((item, i) => (
+                      <div key={`${item.priority}-${i}`} className="flex items-center gap-3 py-2 border-b border-white/[0.04] last:border-0">
+                        <span className="w-4 h-4 border border-white/20 rounded"></span>
+                        <span className="px-1.5 py-0.5 bg-[#5B6CFF]/10 text-[#5B6CFF] text-[10px] font-medium rounded">
+                          {item.priority}
+                        </span>
+                        <span className="text-white/70 text-sm">{safeString(item.task, '')}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-white/50 text-sm">No next steps available.</p>
+                  )}
+                </div>
+
+                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-5">
+                  <h4 className="text-white/90 font-semibold mb-4">Audit Trail Artifacts</h4>
+                  <div className="bg-[#0B1020] border border-white/[0.08] rounded-lg p-4 font-mono text-xs">
+                    <div className="text-white/40 mb-2">{safeString(artifacts.run_dir, '—')}</div>
+                    <div className="text-white/60 space-y-1">
+                      {Array.isArray(artifacts.files) && artifacts.files.length > 0 ? (
+                        artifacts.files.map((file) => (
+                          <div key={file}>{file}</div>
+                        ))
+                      ) : (
+                        <div>No artifacts listed.</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Footer */}
             <div className="px-8 py-4 bg-white/[0.02] border-t border-white/[0.06] flex items-center justify-between text-xs text-white/40">
               <span>Run ID: {runIdDisplay}</span>
               <span>Generated: {generatedAtLabel}</span>
-              <span>{run.halal ? 'EU + Halal' : 'EU Only'}</span>
+              <span>{halalEnabled ? 'EU + Halal' : 'EU Only'}</span>
             </div>
           </motion.div>
 
@@ -923,6 +996,147 @@ export default function ReportPage() {
               <RefreshCw className="mr-2 h-4 w-4" />
               Run New Preflight
             </Button>
+          </motion.div>
+
+          {/* Corrections & Re-run */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="mt-10 bg-white/[0.02] border border-white/[0.08] rounded-2xl p-6"
+          >
+            <button
+              onClick={() => setShowCorrectionsPanel(!showCorrectionsPanel)}
+              className="w-full flex items-center justify-between mb-6"
+            >
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 bg-amber-500/10 text-amber-400 text-xs font-medium rounded-full border border-amber-500/30">
+                  <Edit3 className="inline h-3 w-3 mr-1" />
+                  Corrections
+                </span>
+                <span className="text-white/50 text-sm">Corrections & Re-run</span>
+                {corrections.length > 0 && (
+                  <span className="px-2 py-0.5 bg-[#5B6CFF]/20 text-[#5B6CFF] text-xs rounded-full">
+                    {corrections.length} applied
+                  </span>
+                )}
+              </div>
+              {showCorrectionsPanel ? (
+                <ChevronUp className="h-5 w-5 text-white/40" />
+              ) : (
+                <ChevronDown className="h-5 w-5 text-white/40" />
+              )}
+            </button>
+
+            {showCorrectionsPanel && (
+              <div className="space-y-6">
+                {corrections.length > 0 && (
+                  <div className="space-y-3">
+                    <Label className="text-white/60 text-xs uppercase tracking-wider">Previous Corrections</Label>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {corrections.map((correction, idx) => (
+                        <div key={idx} className="bg-white/[0.02] border border-white/[0.06] rounded-lg p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <MessageSquare className="h-4 w-4 text-[#5B6CFF]" />
+                            <span className="text-xs text-white/40">
+                              {formatCorrectionDate(correction.created_at)}
+                            </span>
+                          </div>
+                          <p className="text-white/80 text-sm">{safeString(correction.corrections_text, '')}</p>
+                          {correction.override_fields_json && correction.override_fields_json !== '{}' && (
+                            <div className="mt-2 pt-2 border-t border-white/[0.06]">
+                              <span className="text-xs text-white/40">Override fields: </span>
+                              <code className="text-xs text-amber-400/80 bg-amber-500/10 px-1 rounded">
+                                {safeString(correction.override_fields_json, '')}
+                              </code>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-white/[0.02] border border-white/[0.08] rounded-xl p-5 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Plus className="h-4 w-4 text-emerald-400" />
+                    <Label className="text-white/80 text-sm font-medium">Apply New Correction</Label>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="corrections-text" className="text-white/60 text-xs">
+                      What should be corrected? <span className="text-rose-400">*</span>
+                    </Label>
+                    <Textarea
+                      id="corrections-text"
+                      value={correctionsText}
+                      onChange={(e) => setCorrectionsText(e.target.value)}
+                      placeholder="E.g., 'Update allergen emphasis for milk and hazelnuts. Correct QUID percentage for cocoa.'"
+                      className="min-h-[100px] bg-white/[0.04] border-white/[0.12] text-white placeholder:text-white/30 focus:border-[#5B6CFF] resize-none text-sm"
+                    />
+                    <p className="text-white/30 text-xs">Minimum 3 characters required</p>
+                  </div>
+
+                  <div className="border border-white/[0.06] rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => setShowOverrides(!showOverrides)}
+                      className="w-full px-4 py-2.5 flex items-center justify-between bg-white/[0.02] hover:bg-white/[0.04] transition-colors text-left"
+                    >
+                      <span className="text-xs text-white/60">Override fields (optional)</span>
+                      {showOverrides ? (
+                        <ChevronUp className="h-4 w-4 text-white/40" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-white/40" />
+                      )}
+                    </button>
+                    {showOverrides && (
+                      <div className="p-4 border-t border-white/[0.06] space-y-3">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="languages-override" className="text-white/60 text-xs">
+                            Languages (comma-separated)
+                          </Label>
+                          <Input
+                            id="languages-override"
+                            value={languagesOverride}
+                            onChange={(e) => setLanguagesOverride(e.target.value)}
+                            placeholder="e.g., English, Italian, German"
+                            className="bg-white/[0.04] border-white/[0.12] text-white placeholder:text-white/30 text-sm"
+                          />
+                          <p className="text-white/30 text-xs">
+                            Current: {safeString(product.languages_provided, 'Not specified')}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {correctionsError && (
+                    <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-lg flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-rose-400 flex-shrink-0" />
+                      <span className="text-rose-400 text-sm">{correctionsError}</span>
+                    </div>
+                  )}
+
+                  <Button
+                    onClick={handleApplyCorrections}
+                    disabled={isApplyingCorrections || correctionsText.trim().length < 3}
+                    className="w-full bg-[#5B6CFF] hover:bg-[#4A5BEE] text-white h-10 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isApplyingCorrections ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Applying corrections...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Apply corrections
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
           </motion.div>
         </div>
       </div>

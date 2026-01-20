@@ -1,102 +1,4 @@
-/**
- * Halal Check Definitions - Single Source of Truth
- * Used by: Landing page sample, Run wizard, Interactive report
- * 
- * DO NOT hardcode check text elsewhere - always import from here
- */
-
-export const HALAL_CHECK_DEFINITIONS = [
-  {
-    id: 'halal_certificate_provided',
-    title: 'Halal Certificate Provided',
-    description: 'Valid Halal certificate uploaded and verified',
-    category: 'documentation',
-    defaultSeverity: 'critical',
-    whatToProvide: 'Provide a valid Halal certificate from an accredited certification body',
-    whyItMatters: 'Export markets require proof of Halal certification from recognized bodies',
-  },
-  {
-    id: 'certificate_expiry_valid',
-    title: 'Certificate Expiry Valid',
-    description: 'Certificate validity period covers production dates',
-    category: 'documentation',
-    defaultSeverity: 'warning',
-    whatToProvide: 'Ensure certificate is current and covers your production timeline',
-    whyItMatters: 'Expired certificates invalidate Halal status for export',
-  },
-  {
-    id: 'certifying_body_recognized',
-    title: 'Certifying Body Recognized',
-    description: 'Issuing body is recognized in target export market',
-    category: 'documentation',
-    defaultSeverity: 'warning',
-    whatToProvide: 'Verify your certifier is accepted by JAKIM (Malaysia), MUI (Indonesia), etc.',
-    whyItMatters: 'Not all certification bodies are accepted in all markets',
-  },
-  {
-    id: 'gelatin_source_declaration',
-    title: 'Gelatin Source Declaration',
-    description: 'Gelatin source is declared and verified as Halal-compliant',
-    category: 'ingredients',
-    defaultSeverity: 'critical',
-    whatToProvide: 'Supplier declaration confirming plant or fish-based gelatin source',
-    whyItMatters: 'Porcine gelatin is strictly prohibited; bovine requires slaughter verification',
-  },
-  {
-    id: 'animal_derived_ingredients',
-    title: 'Animal-Derived Ingredient Risk',
-    description: 'All animal-derived ingredients identified and verified',
-    category: 'ingredients',
-    defaultSeverity: 'warning',
-    whatToProvide: 'Supplier statements for all animal-derived ingredients confirming Halal source',
-    whyItMatters: 'Meat, dairy, and derivatives require Halal slaughter/processing verification',
-  },
-  {
-    id: 'e_number_source_verification',
-    title: 'E-Number Source Verification',
-    description: 'E-numbers verified for animal-derived origins',
-    category: 'ingredients',
-    defaultSeverity: 'warning',
-    whatToProvide: 'Supplier statements for E120, E441, E471, E472, E542, E904, E920',
-    whyItMatters: 'Many E-numbers can be animal-derived; source verification required',
-  },
-  {
-    id: 'alcohol_solvent_carrier',
-    title: 'Alcohol / Solvent / Carrier Flags',
-    description: 'Flavourings and carriers checked for alcohol content',
-    category: 'ingredients',
-    defaultSeverity: 'warning',
-    whatToProvide: 'Supplier spec sheets confirming non-alcohol carriers for flavourings',
-    whyItMatters: 'Alcohol as carrier in flavourings may render product non-Halal',
-  },
-  {
-    id: 'cross_contamination_statement',
-    title: 'Cross-Contamination Statement',
-    description: 'Facility cross-contamination controls documented',
-    category: 'processing',
-    defaultSeverity: 'critical',
-    whatToProvide: 'Facility statement on dedicated lines or cleaning protocols between runs',
-    whyItMatters: 'Shared equipment with non-Halal products creates contamination risk',
-  },
-  {
-    id: 'traceability_fields',
-    title: 'Traceability Fields Complete',
-    description: 'Lot codes and supplier traceability documented',
-    category: 'documentation',
-    defaultSeverity: 'low',
-    whatToProvide: 'Ensure lot codes link to supplier batches for full traceability',
-    whyItMatters: 'Traceability is required for audit and recall scenarios',
-  },
-  {
-    id: 'halal_logo_usage',
-    title: 'Halal Logo Usage Check',
-    description: 'Halal logo on label matches valid certification',
-    category: 'labeling',
-    defaultSeverity: 'warning',
-    whatToProvide: 'Only display authorized Halal logo with active certification',
-    whyItMatters: 'Unauthorized logo use is illegal and can result in export bans',
-  },
-];
+import { HALAL_CHECK_DEFINITIONS } from './halalChecks';
 
 // Get severity color classes
 export const getSeverityColor = (severity) => {
@@ -105,35 +7,35 @@ export const getSeverityColor = (severity) => {
       bg: 'bg-rose-500/20',
       text: 'text-rose-400',
       border: 'border-rose-500/30',
-      badge: 'High',
+      badge: 'Critical',
       icon: '⛔',
     },
     high: {
       bg: 'bg-rose-500/20',
       text: 'text-rose-400',
       border: 'border-rose-500/30',
-      badge: 'High',
+      badge: 'Critical',
       icon: '⛔',
     },
     warning: {
       bg: 'bg-amber-500/20',
       text: 'text-amber-400',
       border: 'border-amber-500/30',
-      badge: 'Medium',
+      badge: 'Warning',
       icon: '⚠️',
     },
     medium: {
       bg: 'bg-amber-500/20',
       text: 'text-amber-400',
       border: 'border-amber-500/30',
-      badge: 'Medium',
+      badge: 'Warning',
       icon: '⚠️',
     },
     low: {
       bg: 'bg-emerald-500/20',
       text: 'text-emerald-400',
       border: 'border-emerald-500/30',
-      badge: 'Low',
+      badge: 'Info',
       icon: '✅',
     },
     pass: {
@@ -156,9 +58,9 @@ export const getSeverityColor = (severity) => {
 
 // Sample checks for landing page (subset with predetermined results)
 export const HALAL_SAMPLE_CHECKS = [
-  { ...HALAL_CHECK_DEFINITIONS.find(c => c.id === 'halal_certificate_provided'), sampleResult: 'pass' },
+  { ...HALAL_CHECK_DEFINITIONS.find(c => c.id === 'halal_certificate_provided'), sampleResult: 'warning' },
   { ...HALAL_CHECK_DEFINITIONS.find(c => c.id === 'certificate_expiry_valid'), sampleResult: 'warning' },
-  { ...HALAL_CHECK_DEFINITIONS.find(c => c.id === 'gelatin_source_declaration'), sampleResult: 'critical' },
+  { ...HALAL_CHECK_DEFINITIONS.find(c => c.id === 'gelatin_enzymes_check'), sampleResult: 'pass' },
   { ...HALAL_CHECK_DEFINITIONS.find(c => c.id === 'e_number_source_verification'), sampleResult: 'warning' },
 ];
 
