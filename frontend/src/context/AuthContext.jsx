@@ -26,7 +26,7 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
 
   // Check if user is admin
-  const isAdmin = user?.email === ADMIN_EMAIL;
+  const isAdmin = user?.is_admin ?? user?.email === ADMIN_EMAIL;
 
   // Get credits display
   const credits = isAdmin ? Infinity : (wallet?.credits_available || 0);
@@ -48,7 +48,7 @@ export function AuthProvider({ children }) {
         // Load or create wallet
         if (storedWallet) {
           setWallet(JSON.parse(storedWallet));
-        } else if (authData.email !== ADMIN_EMAIL) {
+        } else if (!authData.is_admin && authData.email !== ADMIN_EMAIL) {
           const newWallet = createDefaultWallet();
           localStorage.setItem('ava_wallet', JSON.stringify(newWallet));
           setWallet(newWallet);
@@ -61,6 +61,49 @@ export function AuthProvider({ children }) {
     }
     setLoading(false);
   }, []);
+
+  const ensureWalletForUser = useCallback((authData) => {
+    if (!authData || authData.is_admin || authData.email === ADMIN_EMAIL) {
+      setWallet(null);
+      return;
+    }
+
+    const existingWallet = localStorage.getItem('ava_wallet');
+    if (existingWallet) {
+      setWallet(JSON.parse(existingWallet));
+      return;
+    }
+
+    const newWallet = createDefaultWallet();
+    localStorage.setItem('ava_wallet', JSON.stringify(newWallet));
+    setWallet(newWallet);
+  }, []);
+
+  const applyAuthSession = useCallback((session, provider = 'google') => {
+    if (session?.token) {
+      setAuthToken(session.token);
+      setToken(session.token);
+    }
+
+    const email = session?.email ?? session?.user?.email ?? '';
+    const name = session?.name ?? session?.user?.name ?? (email ? email.split('@')[0] : '');
+
+    const authData = {
+      provider,
+      email,
+      name,
+      picture: session?.picture ?? session?.user?.picture ?? '',
+      iat: new Date().toISOString(),
+      user_id: session?.user_id ?? session?.user?.user_id ?? session?.user?.id,
+      is_admin: session?.is_admin ?? session?.user?.is_admin,
+    };
+
+    localStorage.setItem('ava_auth', JSON.stringify(authData));
+    setUser(authData);
+    ensureWalletForUser(authData);
+
+    return authData;
+  }, [ensureWalletForUser]);
 
   // Google login handler (kept for compatibility)
   const loginWithGoogle = useCallback((credential) => {
@@ -79,19 +122,10 @@ export function AuthProvider({ children }) {
     setUser(authData);
     
     // Create wallet for non-admin users
-    if (authData.email !== ADMIN_EMAIL) {
-      const existingWallet = localStorage.getItem('ava_wallet');
-      if (!existingWallet) {
-        const newWallet = createDefaultWallet();
-        localStorage.setItem('ava_wallet', JSON.stringify(newWallet));
-        setWallet(newWallet);
-      } else {
-        setWallet(JSON.parse(existingWallet));
-      }
-    }
+    ensureWalletForUser(authData);
     
     return { success: true };
-  }, []);
+  }, [ensureWalletForUser]);
 
   // Logout
   const logout = useCallback(() => {
@@ -107,36 +141,14 @@ export function AuthProvider({ children }) {
       // Call backend dev-login endpoint
       const response = await authAPI.devLogin(email);
       
-      // Store the token
-      if (response.token) {
-        setAuthToken(response.token);
-        setToken(response.token);
-      }
-      
-      // Create auth data from response or email
-      const authData = {
-        provider: 'dev',
-        email: response.email || email,
-        name: response.name || email.split('@')[0],
-        picture: response.picture || '',
-        iat: new Date().toISOString(),
-        user_id: response.user_id,
-      };
-      
-      localStorage.setItem('ava_auth', JSON.stringify(authData));
-      setUser(authData);
-      
-      // Handle wallet for non-admin users
-      if (authData.email !== ADMIN_EMAIL) {
-        const existingWallet = localStorage.getItem('ava_wallet');
-        if (existingWallet) {
-          setWallet(JSON.parse(existingWallet));
-        } else {
-          const newWallet = createDefaultWallet();
-          localStorage.setItem('ava_wallet', JSON.stringify(newWallet));
-          setWallet(newWallet);
-        }
-      }
+      applyAuthSession(
+        {
+          ...response,
+          email: response.email || email,
+          name: response.name || email.split('@')[0],
+        },
+        'dev'
+      );
       
       return { success: true, token: response.token };
     } catch (error) {
@@ -222,6 +234,7 @@ export function AuthProvider({ children }) {
     isAuthenticated: !!user && !!token,
     isAdmin,
     loginWithGoogle,
+    completeOAuthLogin: applyAuthSession,
     devLogin,
     logout,
     deductCredits,

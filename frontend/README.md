@@ -64,8 +64,18 @@ Set in `/app/frontend/.env`:
 
 ```env
 # Backend API URL - point to your Node/Express server
-REACT_APP_BACKEND_URL=https://api.nexodify.com
+REACT_APP_API_BASE_URL=https://api.nexodify.com
 ```
+
+### OAuth Redirect Flow
+
+The frontend uses a full redirect OAuth flow for Google sign-in:
+
+1. `GET ${REACT_APP_API_BASE_URL}/auth/google/start?return_to=${encodeURIComponent(window.location.origin + '/oauth/callback')}`
+2. Google redirects to `GET ${REACT_APP_API_BASE_URL}/auth/google/callback`, which then redirects back to `/oauth/callback?code=...`
+3. The frontend exchanges the code:
+   - `POST ${REACT_APP_API_BASE_URL}/auth/exchange` with JSON `{ "code": "..." }`
+4. On success, the frontend stores the returned `token` in `ava_token` and user metadata in `ava_auth`, then navigates to `/dashboard`.
 
 ## API Contract
 
@@ -77,6 +87,9 @@ The frontend expects these endpoints from your Node/Express backend. See `/app/d
 - `POST /api/auth/verify-email` - Verify email token
 - `POST /api/auth/forgot-password` - Request password reset
 - `POST /api/auth/reset-password` - Reset password with token
+- `GET /auth/google/start` - Begin Google OAuth redirect flow
+- `GET /auth/google/callback` - Google redirect endpoint (backend handles)
+- `POST /auth/exchange` - Exchange OAuth code for token
 
 ### User
 - `GET /api/me` - Get current user + credits

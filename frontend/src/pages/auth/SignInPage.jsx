@@ -1,13 +1,14 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { ShieldCheck, Loader2, AlertCircle } from 'lucide-react';
+import { API_BASE_URL } from '../../lib/api';
 
-const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+const ENABLE_DEV_LOGIN = process.env.REACT_APP_ENABLE_DEV_LOGIN === 'true';
 
 export default function SignInPage() {
   const navigate = useNavigate();
-  const { loginWithGoogle, devLogin, isAuthenticated } = useAuth();
+  const { devLogin, isAuthenticated } = useAuth();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState(null);
 
@@ -18,53 +19,10 @@ export default function SignInPage() {
     }
   }, [isAuthenticated, navigate]);
 
-  // Handle Google credential response
-  const handleCredentialResponse = useCallback((response) => {
-    if (response.credential) {
-      const result = loginWithGoogle(response.credential);
-      if (result.success) {
-        navigate('/dashboard');
-      }
-    }
-  }, [loginWithGoogle, navigate]);
-
-  // Initialize Google Identity Services
-  useEffect(() => {
-    // Load Google Identity Services script
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    document.body.appendChild(script);
-
-    script.onload = () => {
-      if (window.google) {
-        window.google.accounts.id.initialize({
-          client_id: GOOGLE_CLIENT_ID,
-          callback: handleCredentialResponse,
-        });
-
-        window.google.accounts.id.renderButton(
-          document.getElementById('google-signin-btn'),
-          {
-            theme: 'filled_black',
-            size: 'large',
-            width: 320,
-            text: 'continue_with',
-            shape: 'rectangular',
-          }
-        );
-      }
-    };
-
-    return () => {
-      // Cleanup
-      const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
-      if (existingScript) {
-        existingScript.remove();
-      }
-    };
-  }, [handleCredentialResponse]);
+  const handleGoogleRedirect = () => {
+    const returnTo = `${window.location.origin}/oauth/callback`;
+    window.location.href = `${API_BASE_URL}/auth/google/start?return_to=${encodeURIComponent(returnTo)}`;
+  };
 
   return (
     <div className="min-h-screen bg-[#070A12] flex flex-col">
@@ -98,10 +56,16 @@ export default function SignInPage() {
 
             {/* Google Sign In Button */}
             <div className="flex justify-center mb-6">
-              <div id="google-signin-btn"></div>
+              <button
+                onClick={handleGoogleRedirect}
+                className="w-full py-3 px-4 bg-white text-slate-900 rounded-xl hover:bg-slate-100 transition-colors text-sm font-semibold"
+              >
+                Continue with Google
+              </button>
             </div>
 
             {/* Dev Login for Testing */}
+            {ENABLE_DEV_LOGIN && (
             <div className="space-y-3">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
@@ -176,6 +140,7 @@ export default function SignInPage() {
                 )}
               </button>
             </div>
+            )}
 
             {/* Info */}
             <div className="text-center text-sm text-white/50">

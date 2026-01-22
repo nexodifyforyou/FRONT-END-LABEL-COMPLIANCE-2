@@ -11,6 +11,7 @@ import TermsPage from "./pages/TermsPage";
 
 // Auth pages
 import SignInPage from "./pages/auth/SignInPage";
+import OAuthCallbackPage from "./pages/auth/OAuthCallbackPage";
 
 // Protected pages
 import DashboardPage from "./pages/DashboardPage";
@@ -34,6 +35,7 @@ function App() {
             {/* Auth Routes */}
             <Route path="/signin" element={<PublicRoute><SignInPage /></PublicRoute>} />
             <Route path="/login" element={<Navigate to="/signin" replace />} />
+            <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
 
             {/* Protected Routes */}
             <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
