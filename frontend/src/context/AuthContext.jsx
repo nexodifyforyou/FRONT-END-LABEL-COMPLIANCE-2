@@ -60,7 +60,7 @@ export function AuthProvider({ children }) {
       }
     }
     setLoading(false);
-  }, []);
+  }, [applyAuthSession]);
 
   const ensureWalletForUser = useCallback((authData) => {
     if (!authData || authData.is_admin || authData.email === ADMIN_EMAIL) {
