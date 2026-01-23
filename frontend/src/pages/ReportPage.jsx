@@ -44,7 +44,7 @@ import {
 } from 'lucide-react';
 import { getSeverityColor } from '../lib/checkDefinitions';
 import { HALAL_CHECK_DEFINITIONS } from '../lib/halalChecks';
-import { runAPI, API_BASE_URL } from '../lib/api';
+import { runAPI } from '../lib/api';
 
 // ============================================================================
 // TOAST NOTIFICATION COMPONENT
@@ -304,43 +304,14 @@ export default function ReportPage() {
   };
 
   // ============================================================================
-  // PDF DOWNLOAD WITH CACHE-BUSTER
-  // Adds timestamp query param to ensure latest PDF is downloaded after corrections
+  // Premium PDF download (auth-protected)
   // ============================================================================
   const handleDownloadPdf = async () => {
     try {
-      // Build PDF URL with cache-buster to ensure fresh download after corrections
-      const cacheBuster = `?t=${Date.now()}`;
-      const basePdfUrl = run?.files?.pdf 
-        ? `${API_BASE_URL}${run.files.pdf}`
-        : runAPI.getPdfUrl(runId);
-      const pdfUrl = `${basePdfUrl}${cacheBuster}`;
-      
-      const response = await fetch(pdfUrl, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('ava_token')}`,
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to download PDF');
-      }
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${run?.run_id || 'report'}-report.pdf`;
-      link.click();
-      window.URL.revokeObjectURL(url);
+      await runAPI.downloadPremiumPdf(runId, run);
     } catch (error) {
       console.error('PDF download error:', error);
-      // Fallback to direct link with cache-buster
-      const cacheBuster = `?t=${Date.now()}`;
-      const pdfUrl = run?.files?.pdf 
-        ? `${API_BASE_URL}${run.files.pdf}${cacheBuster}`
-        : `${runAPI.getPdfUrl(runId)}${cacheBuster}`;
-      window.open(pdfUrl, '_blank');
+      setToast({ message: 'Failed to download PDF', type: 'error' });
     }
   };
 
@@ -516,7 +487,7 @@ export default function ReportPage() {
                 className="border-white/[0.14] text-white/80 hover:bg-white/[0.04]"
               >
                 <Download className="mr-2 h-4 w-4" />
-                Download PDF
+                Download Premium PDF
               </Button>
             </div>
           </div>
@@ -986,7 +957,7 @@ export default function ReportPage() {
               className="bg-[#5B6CFF] hover:bg-[#4A5BEE] text-white h-12 px-8 rounded-xl"
             >
               <Download className="mr-2 h-4 w-4" />
-              Download PDF Report
+              Download Premium PDF
             </Button>
             <Button
               onClick={() => navigate('/run')}

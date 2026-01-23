@@ -6,6 +6,17 @@ import axios from 'axios';
 export const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL ?? "https://api.nexodify.com";
 
+const resolveApiUrl = (maybeRelativeUrl) => {
+  if (!maybeRelativeUrl) return null;
+  if (/^https?:\/\//i.test(maybeRelativeUrl)) return maybeRelativeUrl;
+  return `${API_BASE_URL}${maybeRelativeUrl}`;
+};
+
+const sanitizeFilename = (value) =>
+  String(value || 'report')
+    .replace(/[^a-zA-Z0-9_-]/g, '_')
+    .replace(/_+/g, '_');
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -121,6 +132,33 @@ export const runAPI = {
     const url = pdfPath ? `/api/runs/${runId}${pdfPath}` : `/api/runs/${runId}/report.pdf`;
     const response = await api.get(url, { responseType: 'blob' });
     return response.data;
+  },
+
+  // Download Premium PDF with auth (triggers browser download)
+  downloadPremiumPdf: async (runId, report = null) => {
+    const pdfPath = report?.pdf_url || report?.files?.pdf;
+    const resolved = resolveApiUrl(pdfPath) || `${API_BASE_URL}/api/runs/${runId}/report.pdf`;
+    const cacheBuster = `t=${Date.now()}`;
+    const url = resolved.includes('?') ? `${resolved}&${cacheBuster}` : `${resolved}?${cacheBuster}`;
+
+    const response = await api.get(url, {
+      responseType: 'blob',
+      headers: {
+        Authorization: `Bearer ${getAuthToken()}`,
+      },
+    });
+
+    const blob = response.data;
+    const safeId = sanitizeFilename(runId);
+    const filename = `AVA_Preflight_${safeId}.pdf`;
+    const blobUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(blobUrl);
   },
 
   // GET /health
