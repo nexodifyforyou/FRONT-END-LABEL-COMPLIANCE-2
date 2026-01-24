@@ -170,36 +170,11 @@ export default function HistoryPage() {
 
   const handleDownloadPdf = async (run) => {
     try {
-      // Get PDF URL from run data or construct default
-      const pdfUrl = run?.files?.pdf 
-        ? `${API_BASE_URL}${run.files.pdf}`
-        : runAPI.getPdfUrl(run.run_id);
-      
-      // Download the PDF
-      const response = await fetch(pdfUrl, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('ava_token')}`,
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to download PDF');
-      }
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${run.run_id}-report.pdf`;
-      link.click();
-      window.URL.revokeObjectURL(url);
+      await runAPI.downloadPremiumPdf(run.run_id, null, 'executive');
     } catch (error) {
       console.error('PDF download error:', error);
       // Fallback to direct link
-      const pdfUrl = run?.files?.pdf 
-        ? `${API_BASE_URL}${run.files.pdf}`
-        : runAPI.getPdfUrl(run.run_id);
-      window.open(pdfUrl, '_blank');
+      window.open(`${API_BASE_URL}/api/runs/${run.run_id}/report.pdf`, '_blank');
     }
   };
 
@@ -380,7 +355,7 @@ export default function HistoryPage() {
                         size="sm"
                         onClick={() => handleDownloadPdf(run)}
                         className="text-white/60 hover:text-white hover:bg-white/[0.06]"
-                        title="Download PDF"
+                        title="Download Executive PDF"
                       >
                         <Download className="h-4 w-4" />
                       </Button>

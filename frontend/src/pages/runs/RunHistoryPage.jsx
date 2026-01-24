@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { runAPI } from '../../lib/api';
+import { runAPI, API_BASE_URL } from '../../lib/api';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -112,6 +112,15 @@ export default function RunHistoryPage() {
       return 'bg-rose-50 text-rose-700 border-rose-200';
     }
     return 'bg-amber-50 text-amber-700 border-amber-200';
+  };
+
+  const handleDownloadPdf = async (runId) => {
+    try {
+      await runAPI.downloadPremiumPdf(runId, null, 'executive');
+    } catch (error) {
+      console.error('PDF download error:', error);
+      window.open(`${API_BASE_URL}/api/runs/${runId}/report.pdf`, '_blank');
+    }
   };
 
   const totalPages = Math.ceil(pagination.total / pagination.limit);
@@ -264,11 +273,14 @@ export default function RunHistoryPage() {
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
                               <a
-                                href={runAPI.downloadPdf(run.run_id)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
+                                href="#"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleDownloadPdf(run.run_id);
+                                }}
                                 className="p-1.5 hover:bg-slate-100 rounded"
+                                title="Download Executive PDF"
                               >
                                 <Download className="h-4 w-4 text-slate-500" />
                               </a>

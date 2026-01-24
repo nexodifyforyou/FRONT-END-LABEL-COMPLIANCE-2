@@ -317,30 +317,8 @@ export default function DashboardPage() {
 
   const handleDownloadPdf = async (run) => {
     try {
-      // Get PDF URL from run data or construct default
-      const pdfUrl = run?.files?.pdf 
-        ? `${API_BASE_URL}${run.files.pdf}`
-        : runAPI.getPdfUrl(run.run_id);
-      
-      // Download the PDF
-      const response = await fetch(pdfUrl, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('ava_token')}`,
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to download PDF');
-      }
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${run.run_id}-report.pdf`;
-      link.click();
-      window.URL.revokeObjectURL(url);
-      
+      await runAPI.downloadPremiumPdf(run.run_id, null, 'executive');
+
       // Mark checklist
       if (!checklist.downloadPdf) {
         toggleChecklistItem('downloadPdf');
@@ -348,10 +326,7 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('PDF download error:', error);
       // Fallback to direct link
-      const pdfUrl = run?.files?.pdf 
-        ? `${API_BASE_URL}${run.files.pdf}`
-        : runAPI.getPdfUrl(run.run_id);
-      window.open(pdfUrl, '_blank');
+      window.open(`${API_BASE_URL}/api/runs/${run.run_id}/report.pdf`, '_blank');
     }
   };
 
@@ -651,7 +626,7 @@ export default function DashboardPage() {
                           <button
                             onClick={() => handleDownloadPdf(run)}
                             className="p-1.5 hover:bg-white/[0.06] rounded-lg transition-colors"
-                            title="Download PDF"
+                            title="Download Executive PDF"
                           >
                             <Download className="h-4 w-4 text-white/50" />
                           </button>

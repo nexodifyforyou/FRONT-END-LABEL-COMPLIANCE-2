@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
@@ -59,7 +59,84 @@ const Toast = ({ message, type = 'success', onClose }) => {
   );
 };
 
- 
+const DownloadPdfMenu = ({
+  onDownload,
+  helperText,
+  variant = 'default',
+  size = 'default',
+  buttonClassName = '',
+  toggleClassName = '',
+  menuAlign = 'right',
+  helperClassName = '',
+}) => {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
+
+  const handleSelect = (selection) => {
+    onDownload(selection);
+    setOpen(false);
+  };
+
+  return (
+    <div className="relative inline-flex flex-col" ref={menuRef}>
+      <div className="inline-flex">
+        <Button
+          variant={variant}
+          size={size}
+          onClick={() => handleSelect('executive')}
+          className={`rounded-r-none ${buttonClassName}`}
+        >
+          <Download className="mr-2 h-4 w-4" />
+          Download PDF
+        </Button>
+        <Button
+          variant={variant}
+          size={size}
+          onClick={() => setOpen((prev) => !prev)}
+          aria-haspopup="menu"
+          aria-expanded={open}
+          className={`px-2 rounded-l-none ${toggleClassName}`}
+        >
+          <ChevronDown className="h-4 w-4" />
+        </Button>
+      </div>
+      {open && (
+        <div
+          className={`absolute ${menuAlign === 'left' ? 'left-0' : 'right-0'} mt-2 w-56 rounded-xl border border-white/[0.12] bg-[#0b0f1b] shadow-xl overflow-hidden z-50`}
+        >
+          <button
+            onClick={() => handleSelect('executive')}
+            className="w-full px-4 py-2.5 text-left text-sm text-white/90 hover:bg-white/[0.06] transition-colors"
+          >
+            Executive (fast summary)
+          </button>
+          <button
+            onClick={() => handleSelect('full')}
+            className="w-full px-4 py-2.5 text-left text-sm text-white/90 hover:bg-white/[0.06] transition-colors"
+          >
+            Full Audit (all evidence)
+          </button>
+        </div>
+      )}
+      {helperText && (
+        <p className={`mt-2 text-xs text-white/40 ${helperClassName}`}>
+          {helperText}
+        </p>
+      )}
+    </div>
+  );
+};
 
 export default function ReportPage() {
   const { runId } = useParams();
@@ -351,22 +428,12 @@ export default function ReportPage() {
                   Dashboard
                 </Button>
               </Link>
-              <Button
+              <DownloadPdfMenu
+                onDownload={handleDownloadPdf}
                 variant="outline"
-                onClick={() => handleDownloadPdf('executive')}
-                className="border-white/[0.14] text-white/80 hover:bg-white/[0.04]"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Download Executive PDF
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleDownloadPdf('full')}
-                className="border-white/[0.14] text-white/80 hover:bg-white/[0.04]"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Download Full Audit PDF
-              </Button>
+                buttonClassName="border-white/[0.14] text-white/80 hover:bg-white/[0.04]"
+                toggleClassName="border-white/[0.14] text-white/80 hover:bg-white/[0.04]"
+              />
             </div>
           </div>
         </div>
@@ -384,20 +451,13 @@ export default function ReportPage() {
             transition={{ delay: 0.2 }}
             className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <Button
-              onClick={() => handleDownloadPdf('executive')}
-              className="bg-[#5B6CFF] hover:bg-[#4A5BEE] text-white h-12 px-8 rounded-xl"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Download Executive PDF
-            </Button>
-            <Button
-              onClick={() => handleDownloadPdf('full')}
-              className="bg-white/[0.08] hover:bg-white/[0.12] text-white h-12 px-8 rounded-xl border border-white/[0.16]"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Download Full Audit PDF
-            </Button>
+            <DownloadPdfMenu
+              onDownload={handleDownloadPdf}
+              helperText="Executive is a fast summary. Full Audit includes all evidence."
+              buttonClassName="bg-[#5B6CFF] hover:bg-[#4A5BEE] text-white h-12 px-8 rounded-xl"
+              toggleClassName="bg-[#5B6CFF] hover:bg-[#4A5BEE] text-white h-12 px-3 rounded-xl"
+              helperClassName="text-center sm:text-left"
+            />
             <Button
               onClick={() => navigate('/run')}
               variant="outline"

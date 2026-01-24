@@ -157,7 +157,7 @@ export const runAPI = {
 
     const blob = response.data;
     const safeId = sanitizeFilename(runId);
-    const suffix = variant === 'full' ? '_Full' : '';
+    const suffix = variant === 'full' ? '_FullAudit' : '_Executive';
     const filename = `AVA_Preflight_${safeId}${suffix}.pdf`;
     const blobUrl = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
