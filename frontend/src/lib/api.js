@@ -142,10 +142,9 @@ export const runAPI = {
 
   // Download Premium PDF with auth (triggers browser download)
   downloadPremiumPdf: async (runId, report = null, variant = 'executive') => {
-    const pdfPath = report?.pdf_url || report?.files?.pdf;
     const resolved = variant === 'full'
       ? `${API_BASE_URL}/api/runs/${runId}/report_full.pdf`
-      : resolveApiUrl(pdfPath) || `${API_BASE_URL}/api/runs/${runId}/report.pdf`;
+      : `${API_BASE_URL}/api/runs/${runId}/report.pdf`;
     const cacheBuster = `t=${Date.now()}`;
     const url = resolved.includes('?') ? `${resolved}&${cacheBuster}` : `${resolved}?${cacheBuster}`;
 

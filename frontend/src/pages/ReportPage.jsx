@@ -222,6 +222,17 @@ export default function ReportPage() {
       await runAPI.downloadPremiumPdf(runId, run, variant);
     } catch (error) {
       console.error('PDF download error:', error);
+      const status = error?.response?.status;
+      if (variant === 'full') {
+        if (status === 404) {
+          setToast({ message: 'Full audit PDF not available yet (backend endpoint missing).', type: 'error' });
+          return;
+        }
+        if (status === 401 || status === 403) {
+          setToast({ message: 'Please login again.', type: 'error' });
+          return;
+        }
+      }
       setToast({ message: 'Failed to download PDF', type: 'error' });
     }
   };
