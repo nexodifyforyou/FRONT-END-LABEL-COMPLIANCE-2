@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { motion } from 'framer-motion';
 import {
@@ -13,21 +13,39 @@ import {
 import ReportView from '../components/ReportView';
 
 export default function SampleReportPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const demoMode = searchParams.get('demo') === '1';
   const [sampleReport, setSampleReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
+  const [dataSource, setDataSource] = useState(demoMode ? 'demo' : 'sample');
+  const [demoUnavailable, setDemoUnavailable] = useState(false);
 
   useEffect(() => {
     const fetchSampleReport = async () => {
       setLoading(true);
       setLoadError(null);
+      setDemoUnavailable(false);
       try {
-        const response = await fetch('/sample-report.json');
+        const primaryPath = demoMode ? '/demo-report.json' : '/sample-report.json';
+        const response = await fetch(primaryPath);
         if (!response.ok) {
+          if (demoMode) {
+            const fallback = await fetch('/sample-report.json');
+            if (!fallback.ok) {
+              throw new Error('Failed to load sample report');
+            }
+            const fallbackData = await fallback.json();
+            setSampleReport(fallbackData);
+            setDataSource('sample');
+            setDemoUnavailable(true);
+            return;
+          }
           throw new Error('Failed to load sample report');
         }
         const reportData = await response.json();
         setSampleReport(reportData);
+        setDataSource(demoMode ? 'demo' : 'sample');
       } catch (error) {
         console.error('Error loading sample report:', error);
         setLoadError(error.message || 'Failed to load sample report');
@@ -37,7 +55,17 @@ export default function SampleReportPage() {
     };
 
     fetchSampleReport();
-  }, []);
+  }, [demoMode]);
+
+  const handleToggleData = () => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (demoMode) {
+      nextParams.delete('demo');
+    } else {
+      nextParams.set('demo', '1');
+    }
+    setSearchParams(nextParams);
+  };
 
   if (loading) {
     return (
@@ -65,14 +93,19 @@ export default function SampleReportPage() {
     );
   }
 
-  const samplePdfHref = sampleReport?.product?.halal_enabled === true
-    ? '/sample-halal-report.pdf'
-    : '/sample-report.pdf';
+  const halalEnabled = sampleReport?.product?.halal_enabled ?? sampleReport?.halal ?? false;
+  const samplePdfHref = halalEnabled ? '/sample-halal-report.pdf' : '/sample-report.pdf';
+  const showingDemo = dataSource === 'demo';
 
   return (
-    <div className="min-h-screen bg-[#070A12] text-white">
+    <div className="min-h-screen text-white relative overflow-hidden bg-[#05070f]">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(91,108,255,0.18),_transparent_55%)]"></div>
+        <div className="absolute -top-32 right-0 h-96 w-96 rounded-full bg-[radial-gradient(circle,_rgba(14,165,233,0.18),_transparent_60%)]"></div>
+        <div className="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-[radial-gradient(circle,_rgba(16,185,129,0.12),_transparent_65%)]"></div>
+      </div>
       {/* Navigation */}
-      <nav className="fixed top-0 inset-x-0 z-50 bg-[#070A12]/60 backdrop-blur-xl border-b border-white/[0.06]">
+      <nav className="fixed top-0 inset-x-0 z-50 bg-[#05070f]/70 backdrop-blur-xl border-b border-white/[0.06]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center gap-2.5">
@@ -103,7 +136,7 @@ export default function SampleReportPage() {
       </nav>
 
       {/* Content */}
-      <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+      <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="max-w-5xl mx-auto">
           {/* Header */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
@@ -113,6 +146,28 @@ export default function SampleReportPage() {
             <p className="text-white/60 max-w-2xl mx-auto">
               EU 1169/2011 label compliance preflight with print verification and optional Halal checks
             </p>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-3 text-sm">
+              <span className={`px-3 py-1 rounded-full border ${showingDemo ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' : 'bg-[#5B6CFF]/10 text-[#9AA7FF] border-[#5B6CFF]/30'}`}>
+                {showingDemo ? 'Demo run JSON' : 'Marketing sample JSON'}
+              </span>
+              <Button
+                variant="outline"
+                onClick={handleToggleData}
+                className="border-white/[0.16] text-white/75 hover:bg-white/[0.06]"
+              >
+                {showingDemo ? 'View marketing sample' : 'View demo run'}
+              </Button>
+            </div>
+            {demoUnavailable && (
+              <p className="text-xs text-amber-300/80 mt-3">
+                Demo data not found. Showing the marketing sample instead.
+              </p>
+            )}
+            {showingDemo && (
+              <p className="text-xs text-white/40 mt-2">
+                PDF downloads remain the marketing sample PDFs for consistency.
+              </p>
+            )}
           </motion.div>
 
           {/* What's Inside */}
@@ -168,7 +223,7 @@ export default function SampleReportPage() {
       </div>
 
       {/* Footer */}
-      <footer className="py-8 px-4 border-t border-white/[0.06]">
+      <footer className="py-8 px-4 border-t border-white/[0.06] relative z-10">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-white/40" />

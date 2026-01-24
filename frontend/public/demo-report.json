@@ -1,0 +1,29 @@
+{
+  "run_id": "demo-run-placeholder",
+  "ts": "2025-01-01T00:00:00Z",
+  "product": {
+    "product_name": "Demo Run Placeholder",
+    "company_name": "Replace public/demo-report.json",
+    "country_of_sale": "EU",
+    "languages_provided": ["English"],
+    "halal_enabled": false
+  },
+  "compliance_score": 0,
+  "evidence_confidence": 0,
+  "findings": [],
+  "cross_check": {
+    "matched": [],
+    "mismatched": []
+  },
+  "print_pack": {
+    "signoff_fields": [],
+    "prepress_checklist": [],
+    "attachments_checklist": [],
+    "printer_notes": ""
+  },
+  "next_steps": [],
+  "artifacts": {
+    "run_dir": "",
+    "files": []
+  }
+}

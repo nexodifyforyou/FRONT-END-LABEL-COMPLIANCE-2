@@ -1,0 +1,1273 @@
+{
+  "run_id": "D1O2I2s3Nb6Z74yU",
+  "status": "ok",
+  "report_schema_version": "v2",
+  "schema_version": "v2",
+  "score": 70,
+  "verdict": "CONDITIONAL",
+  "summary": {
+    "passed": 22,
+    "warnings": 10,
+    "failed": 0,
+    "critical": 0,
+    "issues_total": 10,
+    "matched_count": 4,
+    "mismatched_count": 2
+  },
+  "checks": [
+    {
+      "id": "EU1169_NAME_OF_FOOD",
+      "title": "Name of the food (presence sanity check)",
+      "result": "PASS",
+      "severity": "LOW",
+      "detail": "Label has readable text. Legal basis: Regulation (EU) No 1169/2011, Article 9(1)(a). Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "fix": "No action.",
+      "sources": [
+        "eu1169_evidence_v1_1"
+      ],
+      "evidence": [
+        {
+          "type": "text",
+          "file": "label",
+          "page": 1,
+          "snippet": "AMARENE CANDITE SGOCCIOLATE italprod Ingredienti: ciliegie, zucchero, sciroppo di glucosio-fruttosio, concentrato di succo di amarene, regolatore di acidità: acido citrico, coloranti: concentrato a base di frutta e veget"
+        }
+      ],
+      "error": null,
+      "status": "pass",
+      "description": "Label has readable text. Legal basis: Regulation (EU) No 1169/2011, Article 9(1)(a). Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "source": "eu1169_evidence_v1_1",
+      "reference": "EU1169_NAME_OF_FOOD"
+    },
+    {
+      "id": "EU1169_INGREDIENTS_LIST",
+      "title": "Ingredients list present",
+      "result": "PASS",
+      "severity": "LOW",
+      "detail": "Found an ingredients section. Legal basis: Regulation (EU) No 1169/2011, Article 9(1)(b) and Article 18. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "fix": "No action.",
+      "sources": [
+        "eu1169_evidence_v1_1"
+      ],
+      "evidence": [
+        {
+          "type": "text",
+          "file": "label",
+          "page": 1,
+          "snippet": "AMARENE CANDITE SGOCCIOLATE italprod Ingredienti: ciliegie, zucchero, sciroppo di glucosio-fruttosio, concentrato di succo di amarene, regolatore di acidità: acido citrico, coloranti: concentrato a base di frutta e vegetali, aroma. Il prodo"
+        }
+      ],
+      "error": null,
+      "status": "pass",
+      "description": "Found an ingredients section. Legal basis: Regulation (EU) No 1169/2011, Article 9(1)(b) and Article 18. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "source": "eu1169_evidence_v1_1",
+      "reference": "EU1169_INGREDIENTS_LIST"
+    },
+    {
+      "id": "EU1169_ALLERGENS_DECLARED",
+      "title": "Allergens declared (presence check)",
+      "result": "PASS",
+      "severity": "LOW",
+      "detail": "Detected allergen-related info (nocciol). Legal basis: Regulation (EU) No 1169/2011, Article 9(1)(c) and Article 21. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "fix": "No action.",
+      "sources": [
+        "eu1169_evidence_v1_1",
+        "deterministic_fixups_v1"
+      ],
+      "evidence": [],
+      "error": null,
+      "status": "pass",
+      "description": "Detected allergen-related info (nocciol). Legal basis: Regulation (EU) No 1169/2011, Article 9(1)(c) and Article 21. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "source": "eu1169_evidence_v1_1",
+      "reference": "EU1169_ALLERGENS_DECLARED"
+    },
+    {
+      "id": "EU1169_ALLERGENS_EMPHASIS",
+      "title": "Allergen emphasis (bold/contrast) — manual verification",
+      "result": "WARN",
+      "severity": "MEDIUM",
+      "detail": "OCR text cannot confirm typographic emphasis (bold/contrast/background). Manual check required. Legal basis: Regulation (EU) No 1169/2011, Article 21(1)(b). Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "fix": "Manually confirm allergens are emphasised in the ingredients list (bold/contrast/background) per Art 21.",
+      "sources": [
+        "eu1169_evidence_v1_1"
+      ],
+      "evidence": [
+        {
+          "type": "search",
+          "file": "label",
+          "query": "EU1169_ALLERGENS_EMPHASIS",
+          "found": false,
+          "pagesSearched": [
+            1
+          ]
+        }
+      ],
+      "error": null,
+      "status": "warning",
+      "description": "OCR text cannot confirm typographic emphasis (bold/contrast/background). Manual check required. Legal basis: Regulation (EU) No 1169/2011, Article 21(1)(b). Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "source": "eu1169_evidence_v1_1",
+      "reference": "EU1169_ALLERGENS_EMPHASIS"
+    },
+    {
+      "id": "EU1169_NET_QUANTITY",
+      "title": "Net quantity present (g/kg/ml/l)",
+      "result": "PASS",
+      "severity": "LOW",
+      "detail": "Detected a net quantity value. Legal basis: Regulation (EU) No 1169/2011, Article 9(1)(e) and Article 23. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "fix": "No action.",
+      "sources": [
+        "eu1169_evidence_v1_1"
+      ],
+      "evidence": [
+        {
+          "type": "text",
+          "file": "label",
+          "page": 1,
+          "snippet": "tenere noccioli o frammenti di noccioli. Condizioni di conservazione: mantenere in luogo fresco e asciutto. Peso netto: 5 kg LOTTO: BC08298 Da consumarsi preferibilmente entro il: 25/10/2024 Valori nutrizionali / 100g Energia Grassi di cui"
+        }
+      ],
+      "error": null,
+      "status": "pass",
+      "description": "Detected a net quantity value. Legal basis: Regulation (EU) No 1169/2011, Article 9(1)(e) and Article 23. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "source": "eu1169_evidence_v1_1",
+      "reference": "EU1169_NET_QUANTITY"
+    },
+    {
+      "id": "EU1169_DURABILITY_DATE",
+      "title": "Durability / Use-by date present",
+      "result": "PASS",
+      "severity": "LOW",
+      "detail": "Detected date/durability wording. Legal basis: Regulation (EU) No 1169/2011, Article 9(1)(f) and Article 24. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "fix": "No action.",
+      "sources": [
+        "eu1169_evidence_v1_1"
+      ],
+      "evidence": [
+        {
+          "type": "text",
+          "file": "label",
+          "page": 1,
+          "snippet": "ammenti di noccioli. Condizioni di conservazione: mantenere in luogo fresco e asciutto. Peso netto: 5 kg LOTTO: BC08298 Da consumarsi preferibilmente entro il: 25/10/2024 Valori nutrizionali / 100g Energia Grassi di cui acidi grassi saturi"
+        }
+      ],
+      "error": null,
+      "status": "pass",
+      "description": "Detected date/durability wording. Legal basis: Regulation (EU) No 1169/2011, Article 9(1)(f) and Article 24. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "source": "eu1169_evidence_v1_1",
+      "reference": "EU1169_DURABILITY_DATE"
+    },
+    {
+      "id": "EU1169_STORAGE_CONDITIONS",
+      "title": "Storage conditions present",
+      "result": "PASS",
+      "severity": "LOW",
+      "detail": "Detected storage wording. Legal basis: Regulation (EU) No 1169/2011, Article 9(1)(g) and Article 25. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "fix": "No action.",
+      "sources": [
+        "eu1169_evidence_v1_1"
+      ],
+      "evidence": [
+        {
+          "type": "text",
+          "file": "label",
+          "page": 1,
+          "snippet": "oncentrato a base di frutta e vegetali, aroma. Il prodoto può contenere noccioli o frammenti di noccioli. Condizioni di conservazione: mantenere in luogo fresco e asciutto. Peso netto: 5 kg LOTTO: BC08298 Da consumarsi preferibilmente entro"
+        }
+      ],
+      "error": null,
+      "status": "pass",
+      "description": "Detected storage wording. Legal basis: Regulation (EU) No 1169/2011, Article 9(1)(g) and Article 25. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "source": "eu1169_evidence_v1_1",
+      "reference": "EU1169_STORAGE_CONDITIONS"
+    },
+    {
+      "id": "EU1169_FBO_OPERATOR",
+      "title": "Food business operator name/address present (heuristic)",
+      "result": "WARN",
+      "severity": "MEDIUM",
+      "detail": "No clear operator block detected (may be missing or OCR missed it). Legal basis: Regulation (EU) No 1169/2011, Article 9(1)(h). Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "fix": "Ensure the responsible food business operator name and address are present.",
+      "sources": [
+        "eu1169_evidence_v1_1"
+      ],
+      "evidence": [
+        {
+          "type": "search",
+          "file": "label",
+          "query": "EU1169_FBO_OPERATOR",
+          "found": false,
+          "pagesSearched": [
+            1
+          ]
+        }
+      ],
+      "error": null,
+      "status": "warning",
+      "description": "No clear operator block detected (may be missing or OCR missed it). Legal basis: Regulation (EU) No 1169/2011, Article 9(1)(h). Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "source": "eu1169_evidence_v1_1",
+      "reference": "EU1169_FBO_OPERATOR"
+    },
+    {
+      "id": "EU1169_INSTRUCTIONS_USE",
+      "title": "Instructions for use (conditional)",
+      "result": "WARN",
+      "severity": "MEDIUM",
+      "detail": "Not detected. Only required where needed for appropriate use. Legal basis: Regulation (EU) No 1169/2011, Article 27 (where required). Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "fix": "If consumer needs instructions to use the product correctly, add them.",
+      "sources": [
+        "eu1169_evidence_v1_1"
+      ],
+      "evidence": [
+        {
+          "type": "search",
+          "file": "label",
+          "query": "EU1169_INSTRUCTIONS_USE",
+          "found": false,
+          "pagesSearched": [
+            1
+          ]
+        }
+      ],
+      "error": null,
+      "status": "warning",
+      "description": "Not detected. Only required where needed for appropriate use. Legal basis: Regulation (EU) No 1169/2011, Article 27 (where required). Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "source": "eu1169_evidence_v1_1",
+      "reference": "EU1169_INSTRUCTIONS_USE"
+    },
+    {
+      "id": "EU1169_ORIGIN_PROVENANCE",
+      "title": "Country of origin / provenance (conditional)",
+      "result": "WARN",
+      "severity": "MEDIUM",
+      "detail": "Not detected. Required in specific cases (e.g., where omission misleads, or sector rules). Legal basis: Regulation (EU) No 1169/2011, Article 26. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "fix": "If origin is mandatory for your product/category or omission could mislead, add it.",
+      "sources": [
+        "eu1169_evidence_v1_1"
+      ],
+      "evidence": [
+        {
+          "type": "search",
+          "file": "label",
+          "query": "EU1169_ORIGIN_PROVENANCE",
+          "found": false,
+          "pagesSearched": [
+            1
+          ]
+        }
+      ],
+      "error": null,
+      "status": "warning",
+      "description": "Not detected. Required in specific cases (e.g., where omission misleads, or sector rules). Legal basis: Regulation (EU) No 1169/2011, Article 26. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "source": "eu1169_evidence_v1_1",
+      "reference": "EU1169_ORIGIN_PROVENANCE"
+    },
+    {
+      "id": "EU1169_NUTRITION_HEADER",
+      "title": "Nutrition declaration section present",
+      "result": "PASS",
+      "severity": "LOW",
+      "detail": "Detected a nutrition section. Legal basis: Regulation (EU) No 1169/2011, Article 9(1)(l). Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "fix": "No action.",
+      "sources": [
+        "eu1169_evidence_v1_1"
+      ],
+      "evidence": [
+        {
+          "type": "text",
+          "file": "label",
+          "page": 1,
+          "snippet": "antenere in luogo fresco e asciutto. Peso netto: 5 kg LOTTO: BC08298 Da consumarsi preferibilmente entro il: 25/10/2024 Valori nutrizionali / 100g Energia Grassi di cui acidi grassi saturi Carboidrati di cui zuccheri Proteine Sale 1254 KJ /"
+        }
+      ],
+      "error": null,
+      "status": "pass",
+      "description": "Detected a nutrition section. Legal basis: Regulation (EU) No 1169/2011, Article 9(1)(l). Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "source": "eu1169_evidence_v1_1",
+      "reference": "EU1169_NUTRITION_HEADER"
+    },
+    {
+      "id": "EU1169_NUTRITION_MANDATORY",
+      "title": "Nutrition declaration includes mandatory elements",
+      "result": "PASS",
+      "severity": "LOW",
+      "detail": "All mandatory elements detected (energy + 6 nutrients). Legal basis: Regulation (EU) No 1169/2011, Article 30(1). Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "fix": "No action.",
+      "sources": [
+        "eu1169_evidence_v1_1"
+      ],
+      "evidence": [],
+      "error": null,
+      "status": "pass",
+      "description": "All mandatory elements detected (energy + 6 nutrients). Legal basis: Regulation (EU) No 1169/2011, Article 30(1). Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "source": "eu1169_evidence_v1_1",
+      "reference": "EU1169_NUTRITION_MANDATORY"
+    },
+    {
+      "id": "EU1169_NUTRITION_PER_100",
+      "title": "Nutrition values expressed per 100 g/ml (presence check)",
+      "result": "WARN",
+      "severity": "MEDIUM",
+      "detail": "Could not detect “per 100 g/ml” basis (OCR may have missed it). Legal basis: Regulation (EU) No 1169/2011, Article 32. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "fix": "Add “per 100 g” or “per 100 ml” basis to the nutrition declaration.",
+      "sources": [
+        "eu1169_evidence_v1_1"
+      ],
+      "evidence": [
+        {
+          "type": "search",
+          "file": "label",
+          "query": "EU1169_NUTRITION_PER_100",
+          "found": false,
+          "pagesSearched": [
+            1
+          ]
+        }
+      ],
+      "error": null,
+      "status": "warning",
+      "description": "Could not detect “per 100 g/ml” basis (OCR may have missed it). Legal basis: Regulation (EU) No 1169/2011, Article 32. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "source": "eu1169_evidence_v1_1",
+      "reference": "EU1169_NUTRITION_PER_100"
+    },
+    {
+      "id": "EU1169_FONT_SIZE",
+      "title": "Minimum font size / legibility — manual verification",
+      "result": "WARN",
+      "severity": "MEDIUM",
+      "detail": "Font size cannot be validated from OCR text. Manual check required. Legal basis: Regulation (EU) No 1169/2011, Article 13. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "fix": "Manually confirm x-height and legibility meet Article 13 minimum requirements.",
+      "sources": [
+        "eu1169_evidence_v1_1"
+      ],
+      "evidence": [
+        {
+          "type": "search",
+          "file": "label",
+          "query": "EU1169_FONT_SIZE",
+          "found": false,
+          "pagesSearched": [
+            1
+          ]
+        }
+      ],
+      "error": null,
+      "status": "warning",
+      "description": "Font size cannot be validated from OCR text. Manual check required. Legal basis: Regulation (EU) No 1169/2011, Article 13. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "source": "eu1169_evidence_v1_1",
+      "reference": "EU1169_FONT_SIZE"
+    },
+    {
+      "id": "TDS_READABILITY",
+      "title": "TDS text readability (sanity)",
+      "result": "PASS",
+      "severity": "LOW",
+      "detail": "TDS has readable text. Legal basis: Regulation (EU) No 1169/2011, Articles 9(1)(l) and 30–35. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "fix": "No action.",
+      "sources": [
+        "eu1169_evidence_v1_1"
+      ],
+      "evidence": [
+        {
+          "type": "text",
+          "file": "tds",
+          "page": 1,
+          "snippet": "TECHNICAL DATA SHEET (TDS) – DRAFT / TEST FILE Product name: Amarene Candite Sgocciolate Internal code: SC0829B Supplier / Producer: ITALPROD S.R.L. Address: Str. Sava Roșescu 91, Râmnicu Sărat, 125300, Buzău, Romania Co"
+        }
+      ],
+      "error": null,
+      "status": "pass",
+      "description": "TDS has readable text. Legal basis: Regulation (EU) No 1169/2011, Articles 9(1)(l) and 30–35. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "source": "eu1169_evidence_v1_1",
+      "reference": "TDS_READABILITY"
+    },
+    {
+      "id": "XCHECK_NUTRITION_TDS",
+      "title": "Cross-check nutrition values (Label vs TDS)",
+      "result": "WARN",
+      "severity": "MEDIUM",
+      "detail": "Nutrition panel detected, but values could not be reliably parsed from OCR (table/grid OCR noise). Try a higher-resolution label or a PDF label export. Legal basis: Regulation (EU) No 1169/2011, Article 9(1)(l) and Articles 30–34 (nutrition declaration). Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "fix": "Align label nutrition declaration with the authoritative TDS/spec. Re-upload after correction.",
+      "sources": [
+        "eu1169_evidence_v1_1"
+      ],
+      "evidence": [
+        {
+          "type": "text",
+          "file": "tds",
+          "page": 1,
+          "snippet": "ore in a cool and dry place. After opening, keep refrigerated at 0-4°C and use within 7 days. 4) Shelf life/Traceability Best before: 24 months from production date. Lot/batch: printed on package. 5) Nutrition declaration (per 100 g) Energy: 1254 kJ / 292 kcal Fat: 0.11 g - of which saturates: 0.5 g Carbohydrate: 72.9 g - of which sugars: 69.8 g Protein: 0.3 g Salt: 0.09 g 6) C…"
+        },
+        {
+          "type": "search",
+          "file": "label",
+          "query": "nutrition|nutritional|valori nutrizionali|dichiarazione nutrizionale|energia|energy|kj|kcal|fat|grassi|saturates|saturi|carbohydrate|carboidrati|sugars|zuccheri|protein|proteine|salt|sale",
+          "found": true,
+          "pagesSearched": [
+            1
+          ]
+        },
+        {
+          "file": "tds",
+          "page": 1,
+          "snippet": "4) Shelf life/Traceability Best before: 24 months from production date. Lot/batch: printed on package. 5) Nutrition declaration (per 100 g) Energy: 1254 kJ / 292 kcal Fat: 0.11 g - of which saturates: 0.5 g Carbohydrate: 72.9 g - of which sugars: 69.8 g Protein: 0.3 g Salt: 0.09",
+          "type": "text"
+        },
+        {
+          "file": "tds",
+          "page": 1,
+          "snippet": "Best before: 24 months from production date. Lot/batch: printed on package. 5) Nutrition declaration (per 100 g) Energy: 1254 kJ / 292 kcal Fat: 0.11 g - of which saturates: 0.5 g Carbohydrate: 72.9 g - of which sugars: 69.8 g Protein: 0.3 g Salt: 0.09 g 6) Country of sale / Labe",
+          "type": "text"
+        },
+        {
+          "file": "tds",
+          "page": 1,
+          "snippet": "from production date. Lot/batch: printed on package. 5) Nutrition declaration (per 100 g) Energy: 1254 kJ / 292 kcal Fat: 0.11 g - of which saturates: 0.5 g Carbohydrate: 72.9 g - of which sugars: 69.8 g Protein: 0.3 g Salt: 0.09 g 6) Country of sale / Label languages",
+          "type": "text"
+        },
+        {
+          "file": "tds",
+          "page": 1,
+          "snippet": "ate. Lot/batch: printed on package. 5) Nutrition declaration (per 100 g) Energy: 1254 kJ / 292 kcal Fat: 0.11 g - of which saturates: 0.5 g Carbohydrate: 72.9 g - of which sugars: 69.8 g Protein: 0.3 g Salt: 0.09 g 6) Country of sale / Label languages",
+          "type": "text"
+        },
+        {
+          "file": "tds",
+          "page": 1,
+          "snippet": "ge. 5) Nutrition declaration (per 100 g) Energy: 1254 kJ / 292 kcal Fat: 0.11 g - of which saturates: 0.5 g Carbohydrate: 72.9 g - of which sugars: 69.8 g Protein: 0.3 g Salt: 0.09 g 6) Country of sale / Label languages",
+          "type": "text"
+        },
+        {
+          "file": "tds",
+          "page": 1,
+          "snippet": "n declaration (per 100 g) Energy: 1254 kJ / 292 kcal Fat: 0.11 g - of which saturates: 0.5 g Carbohydrate: 72.9 g - of which sugars: 69.8 g Protein: 0.3 g Salt: 0.09 g 6) Country of sale / Label languages",
+          "type": "text"
+        },
+        {
+          "file": "tds",
+          "page": 1,
+          "snippet": "per 100 g) Energy: 1254 kJ / 292 kcal Fat: 0.11 g - of which saturates: 0.5 g Carbohydrate: 72.9 g - of which sugars: 69.8 g Protein: 0.3 g Salt: 0.09 g 6) Country of sale / Label languages",
+          "type": "text"
+        }
+      ],
+      "error": null,
+      "status": "warning",
+      "description": "Nutrition panel detected, but values could not be reliably parsed from OCR (table/grid OCR noise). Try a higher-resolution label or a PDF label export. Legal basis: Regulation (EU) No 1169/2011, Article 9(1)(l) and Articles 30–34 (nutrition declaration). Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "source": "eu1169_evidence_v1_1",
+      "reference": "XCHECK_NUTRITION_TDS"
+    },
+    {
+      "id": "XCHECK_ALLERGENS_TDS",
+      "title": "Cross-check allergens (TDS vs Label)",
+      "result": "WARN",
+      "severity": "MEDIUM",
+      "detail": "TDS likely refers to a different product; allergen cross-check is not decisive. Potential missing allergen declarations on label (found in TDS): milk Legal basis: Regulation (EU) No 1169/2011, Article 9(1)(c) and Article 21. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "fix": "Verify Annex II allergens and ensure label declares them correctly (and emphasises them in ingredients list).",
+      "sources": [
+        "eu1169_evidence_v1_1"
+      ],
+      "evidence": [
+        {
+          "type": "text",
+          "file": "label",
+          "page": 1,
+          "snippet": "AMARENE CANDITE SGOCCIOLATE italprod Ingredienti: ciliegie, zucchero, sciroppo di glucosio-fruttosio, concentrato di succo di amarene, regolatore di acidità: acido citrico, coloranti: concentrato a base di frutta e vegetali, aroma. Il pr"
+        },
+        {
+          "type": "search",
+          "file": "label",
+          "query": "milk Legal basis: Regulation \\(EU\\) No 1169/2011|Article 9\\(1\\)\\(c\\) and Article 21",
+          "found": false,
+          "pagesSearched": [
+            1
+          ]
+        },
+        {
+          "type": "text",
+          "file": "tds",
+          "page": 1,
+          "snippet": "p, concentrated sour cherry juice, acidity regulator: E300, citric acid, colouring agents of fruit/vegetable origin, flavouring. Allergens: May contain milk and nuts. 2) Net weight/Packaging Net weight: 4 kg (food grade bucket) Packaging: plastic bucket, sealed 3) Storage conditi"
+        },
+        {
+          "type": "text",
+          "file": "label",
+          "page": 1,
+          "snippet": "AMARENE CANDITE SGOCCIOLATE italprod Ingredienti: ciliegie, zucchero, sciroppo di glucosio-fruttosio, concentrato di succo di amarene, regolatore di acidità: acido citrico, colo"
+        }
+      ],
+      "error": null,
+      "status": "warning",
+      "description": "TDS likely refers to a different product; allergen cross-check is not decisive. Potential missing allergen declarations on label (found in TDS): milk Legal basis: Regulation (EU) No 1169/2011, Article 9(1)(c) and Article 21. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "source": "eu1169_evidence_v1_1",
+      "reference": "XCHECK_ALLERGENS_TDS"
+    },
+    {
+      "id": "EU1169_QUID",
+      "title": "QUID (ingredient % declaration) — conditional",
+      "result": "WARN",
+      "severity": "LOW",
+      "detail": "No clear highlighted-ingredient claim detected from available name/label text; QUID applicability could not be determined automatically. Legal basis: Regulation (EU) No 1169/2011, Article 22. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "fix": "If an ingredient is highlighted in the name/claims/images or is essential to characterise the food, declare its % (QUID).",
+      "sources": [
+        "eu1169_evidence_v1_1"
+      ],
+      "evidence": [
+        {
+          "type": "search",
+          "file": "label",
+          "query": "EU1169_QUID",
+          "found": false,
+          "pagesSearched": [
+            1
+          ]
+        }
+      ],
+      "error": null,
+      "status": "warning",
+      "description": "No clear highlighted-ingredient claim detected from available name/label text; QUID applicability could not be determined automatically. Legal basis: Regulation (EU) No 1169/2011, Article 22. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "source": "eu1169_evidence_v1_1",
+      "reference": "EU1169_QUID"
+    },
+    {
+      "id": "XCHECK_INGREDIENTS_TDS",
+      "title": "Cross-check ingredients section presence (TDS vs Label)",
+      "result": "PASS",
+      "severity": "LOW",
+      "detail": "No inconsistency detected for ingredients section presence.",
+      "fix": "No action.",
+      "sources": [
+        "eu1169_evidence_v1_1"
+      ],
+      "evidence": [
+        {
+          "type": "text",
+          "file": "label",
+          "page": 1,
+          "snippet": "AMARENE CANDITE SGOCCIOLATE italprod Ingredienti: ciliegie, zucchero, sciroppo di glucosio-fruttosio, concentrato di succo di amarene, regolatore di acidità: acido citrico, colo"
+        },
+        {
+          "type": "text",
+          "file": "tds",
+          "page": 1,
+          "snippet": "ău, Romania Contact: +40 238 564 700 | office@italprod.eu Intended use: Ingredient for bakery, confectionery, dairy mixes. 1) Composition / Ingredients Ingredients: cherries, sugar, glucose-fructose syrup, concentrated sour cherry juice, acidity regulator: E300, citric acid, colo"
+        }
+      ],
+      "error": null,
+      "status": "pass",
+      "description": "No inconsistency detected for ingredients section presence.",
+      "source": "eu1169_evidence_v1_1",
+      "reference": "XCHECK_INGREDIENTS_TDS"
+    },
+    {
+      "id": "EVIDENCE_PAGE_ANCHORS",
+      "title": "Evidence-grade page anchors available",
+      "result": "PASS",
+      "severity": "LOW",
+      "detail": "Page-anchor text is available for both Label and TDS.",
+      "fix": "No action.",
+      "sources": [
+        "eu1169_evidence_v1_1"
+      ],
+      "evidence": [],
+      "error": null,
+      "status": "pass",
+      "description": "Page-anchor text is available for both Label and TDS.",
+      "source": "eu1169_evidence_v1_1",
+      "reference": "EVIDENCE_PAGE_ANCHORS"
+    },
+    {
+      "id": "OCR_LABEL",
+      "title": "Label text readability",
+      "result": "PASS",
+      "severity": "LOW",
+      "detail": "Label text was read successfully (1 page(s), 765 characters).",
+      "fix": null,
+      "sources": [
+        "docai"
+      ],
+      "evidence": [
+        {
+          "type": "text",
+          "snippet": "AMARENE CANDITE SGOCCIOLATE\nitalprod\nIngredienti: ciliegie, zucchero, sciroppo di glucosio-fruttosio,\nconcentrato di succo di amarene, regolatore di acidità: acido\ncitrico,\ncoloranti: concentrato a base di frutta e vegetali, aroma.\nIl prodoto può contenere noccioli o frammenti di noccioli.\nCondizioni di conservazione: mantenere in luogo fresco e asciutto.\nPeso netto: 5 kg LOTTO: BC08298\nDa consuma"
+        }
+      ],
+      "error": null,
+      "status": "pass",
+      "description": "Label text was read successfully (1 page(s), 765 characters).",
+      "source": "docai",
+      "reference": "OCR_LABEL"
+    },
+    {
+      "id": "OCR_TDS",
+      "title": "TDS text readability",
+      "result": "PASS",
+      "severity": "LOW",
+      "detail": "TDS text was read successfully (2 page(s), 1216 characters).",
+      "fix": null,
+      "sources": [
+        "docai"
+      ],
+      "evidence": [
+        {
+          "type": "text",
+          "snippet": "TECHNICAL DATA SHEET (TDS) – DRAFT / TEST FILE\nProduct name: Amarene Candite Sgocciolate\nInternal code: SC0829B\nSupplier / Producer: ITALPROD S.R.L.\nAddress: Str. Sava Roșescu 91, Râmnicu Sărat, 125300, Buzău, Romania\nContact: +40 238 564 700 | office@italprod.eu\nIntended use: Ingredient for bakery, confectionery, dairy mixes.\n1) Composition / Ingredients\nIngredients: cherries, sugar, glucose-fruc"
+        }
+      ],
+      "error": null,
+      "status": "pass",
+      "description": "TDS text was read successfully (2 page(s), 1216 characters).",
+      "source": "docai",
+      "reference": "OCR_TDS"
+    },
+    {
+      "id": "LABEL_PRODUCT_NAME_MATCH",
+      "title": "Product name appears on label",
+      "result": "PASS",
+      "severity": "LOW",
+      "detail": "The product name appears in the label OCR text.",
+      "fix": null,
+      "sources": [
+        "deterministic"
+      ],
+      "evidence": [
+        {
+          "type": "text",
+          "snippet": "AMARENE CANDITE SGOCCIOLATE\nitalprod\nIngredienti: ciliegie, zucchero, sciroppo di glucosio-fruttosio,\nconcentrato di succo di amarene, regolatore di acidità: acido\ncitrico,\ncoloranti: concentrato a base di frutta e vegetali, aroma.\nIl prodoto può contenere noccioli o frammenti di noccioli.\nCondizioni di conservazione: mantenere in luogo fresco e asciutto.\nPeso netto: 5 kg LOTTO: BC08298\nDa consuma"
+        }
+      ],
+      "error": null,
+      "status": "pass",
+      "description": "The product name appears in the label OCR text.",
+      "source": "deterministic",
+      "reference": "LABEL_PRODUCT_NAME_MATCH"
+    },
+    {
+      "id": "LABEL_INGREDIENTS_PRESENT",
+      "title": "Ingredients statement present",
+      "result": "PASS",
+      "severity": "LOW",
+      "detail": "Ingredients section keyword detected on label.",
+      "fix": null,
+      "sources": [
+        "deterministic"
+      ],
+      "evidence": [
+        {
+          "type": "text",
+          "snippet": "AMARENE CANDITE SGOCCIOLATE\nitalprod\nIngredienti: ciliegie, zucchero, sciroppo di glucosio-fruttosio,\nconcentrato di succo di amarene, regolatore di acidità: acido\ncitrico,\ncoloranti: concentrato a base di frutta e vegetali, aroma.\nIl prodoto può contenere noccioli o frammenti di noccioli.\nCondizioni di conservazione: mantenere in luogo fresco e asciutto.\nPeso netto: 5 kg LOTTO: BC08298\nDa consuma"
+        }
+      ],
+      "error": null,
+      "status": "pass",
+      "description": "Ingredients section keyword detected on label.",
+      "source": "deterministic",
+      "reference": "LABEL_INGREDIENTS_PRESENT"
+    },
+    {
+      "id": "LABEL_ALLERGEN_INFO",
+      "title": "Allergen information detected",
+      "result": "WARN",
+      "severity": "MED",
+      "detail": "No allergen-related keyword/content detected (may be fine if no allergens, but often needs emphasis).",
+      "fix": "If allergens are present, ensure they are emphasized per EU 1169/2011 (formatting cannot be proven via OCR text alone).",
+      "sources": [
+        "deterministic"
+      ],
+      "evidence": [],
+      "error": null,
+      "status": "warning",
+      "description": "No allergen-related keyword/content detected (may be fine if no allergens, but often needs emphasis).",
+      "source": "deterministic",
+      "reference": "LABEL_ALLERGEN_INFO"
+    },
+    {
+      "id": "LABEL_NET_QUANTITY",
+      "title": "Net quantity detected",
+      "result": "PASS",
+      "severity": "LOW",
+      "detail": "Net quantity-like pattern detected (e.g., g/kg/ml/l).",
+      "fix": null,
+      "sources": [
+        "deterministic"
+      ],
+      "evidence": [
+        {
+          "type": "text",
+          "snippet": "AMARENE CANDITE SGOCCIOLATE\nitalprod\nIngredienti: ciliegie, zucchero, sciroppo di glucosio-fruttosio,\nconcentrato di succo di amarene, regolatore di acidità: acido\ncitrico,\ncoloranti: concentrato a base di frutta e vegetali, aroma.\nIl prodoto può contenere noccioli o frammenti di noccioli.\nCondizioni di conservazione: mantenere in luogo fresco e asciutto.\nPeso netto: 5 kg LOTTO: BC08298\nDa consuma"
+        }
+      ],
+      "error": null,
+      "status": "pass",
+      "description": "Net quantity-like pattern detected (e.g., g/kg/ml/l).",
+      "source": "deterministic",
+      "reference": "LABEL_NET_QUANTITY"
+    },
+    {
+      "id": "LABEL_LOT_BATCH",
+      "title": "Lot / batch detected",
+      "result": "PASS",
+      "severity": "LOW",
+      "detail": "Lot/batch keyword detected.",
+      "fix": null,
+      "sources": [
+        "deterministic"
+      ],
+      "evidence": [
+        {
+          "type": "text",
+          "snippet": "AMARENE CANDITE SGOCCIOLATE\nitalprod\nIngredienti: ciliegie, zucchero, sciroppo di glucosio-fruttosio,\nconcentrato di succo di amarene, regolatore di acidità: acido\ncitrico,\ncoloranti: concentrato a base di frutta e vegetali, aroma.\nIl prodoto può contenere noccioli o frammenti di noccioli.\nCondizioni di conservazione: mantenere in luogo fresco e asciutto.\nPeso netto: 5 kg LOTTO: BC08298\nDa consuma"
+        }
+      ],
+      "error": null,
+      "status": "pass",
+      "description": "Lot/batch keyword detected.",
+      "source": "deterministic",
+      "reference": "LABEL_LOT_BATCH"
+    },
+    {
+      "id": "LABEL_DATE_MARKING",
+      "title": "Date marking detected",
+      "result": "PASS",
+      "severity": "LOW",
+      "detail": "Date marking keyword/pattern detected.",
+      "fix": null,
+      "sources": [
+        "deterministic"
+      ],
+      "evidence": [
+        {
+          "type": "text",
+          "snippet": "AMARENE CANDITE SGOCCIOLATE\nitalprod\nIngredienti: ciliegie, zucchero, sciroppo di glucosio-fruttosio,\nconcentrato di succo di amarene, regolatore di acidità: acido\ncitrico,\ncoloranti: concentrato a base di frutta e vegetali, aroma.\nIl prodoto può contenere noccioli o frammenti di noccioli.\nCondizioni di conservazione: mantenere in luogo fresco e asciutto.\nPeso netto: 5 kg LOTTO: BC08298\nDa consuma"
+        }
+      ],
+      "error": null,
+      "status": "pass",
+      "description": "Date marking keyword/pattern detected.",
+      "source": "deterministic",
+      "reference": "LABEL_DATE_MARKING"
+    },
+    {
+      "id": "LABEL_STORAGE_CONDITIONS",
+      "title": "Storage conditions detected",
+      "result": "PASS",
+      "severity": "LOW",
+      "detail": "Storage conditions keyword detected.",
+      "fix": null,
+      "sources": [
+        "deterministic"
+      ],
+      "evidence": [
+        {
+          "type": "text",
+          "snippet": "AMARENE CANDITE SGOCCIOLATE\nitalprod\nIngredienti: ciliegie, zucchero, sciroppo di glucosio-fruttosio,\nconcentrato di succo di amarene, regolatore di acidità: acido\ncitrico,\ncoloranti: concentrato a base di frutta e vegetali, aroma.\nIl prodoto può contenere noccioli o frammenti di noccioli.\nCondizioni di conservazione: mantenere in luogo fresco e asciutto.\nPeso netto: 5 kg LOTTO: BC08298\nDa consuma"
+        }
+      ],
+      "error": null,
+      "status": "pass",
+      "description": "Storage conditions keyword detected.",
+      "source": "deterministic",
+      "reference": "LABEL_STORAGE_CONDITIONS"
+    },
+    {
+      "id": "LABEL_OPERATOR_INFO",
+      "title": "Food business operator info detected",
+      "result": "PASS",
+      "severity": "LOW",
+      "detail": "Company/address-like pattern detected on label.",
+      "fix": null,
+      "sources": [
+        "deterministic"
+      ],
+      "evidence": [
+        {
+          "type": "text",
+          "snippet": "AMARENE CANDITE SGOCCIOLATE\nitalprod\nIngredienti: ciliegie, zucchero, sciroppo di glucosio-fruttosio,\nconcentrato di succo di amarene, regolatore di acidità: acido\ncitrico,\ncoloranti: concentrato a base di frutta e vegetali, aroma.\nIl prodoto può contenere noccioli o frammenti di noccioli.\nCondizioni di conservazione: mantenere in luogo fresco e asciutto.\nPeso netto: 5 kg LOTTO: BC08298\nDa consuma"
+        }
+      ],
+      "error": null,
+      "status": "pass",
+      "description": "Company/address-like pattern detected on label.",
+      "source": "deterministic",
+      "reference": "LABEL_OPERATOR_INFO"
+    },
+    {
+      "id": "LABEL_NUTRITION_DECLARATION",
+      "title": "Nutrition declaration detected",
+      "result": "PASS",
+      "severity": "LOW",
+      "detail": "Nutrition keyword/energy units detected.",
+      "fix": null,
+      "sources": [
+        "deterministic"
+      ],
+      "evidence": [
+        {
+          "type": "text",
+          "snippet": "AMARENE CANDITE SGOCCIOLATE\nitalprod\nIngredienti: ciliegie, zucchero, sciroppo di glucosio-fruttosio,\nconcentrato di succo di amarene, regolatore di acidità: acido\ncitrico,\ncoloranti: concentrato a base di frutta e vegetali, aroma.\nIl prodoto può contenere noccioli o frammenti di noccioli.\nCondizioni di conservazione: mantenere in luogo fresco e asciutto.\nPeso netto: 5 kg LOTTO: BC08298\nDa consuma"
+        }
+      ],
+      "error": null,
+      "status": "pass",
+      "description": "Nutrition keyword/energy units detected.",
+      "source": "deterministic",
+      "reference": "LABEL_NUTRITION_DECLARATION"
+    },
+    {
+      "id": "TDS_PRODUCT_NAME_MATCH",
+      "title": "Product name appears in TDS",
+      "result": "PASS",
+      "severity": "LOW",
+      "detail": "Product name appears in TDS OCR text.",
+      "fix": null,
+      "sources": [
+        "deterministic"
+      ],
+      "evidence": [
+        {
+          "type": "text",
+          "snippet": "TECHNICAL DATA SHEET (TDS) – DRAFT / TEST FILE\nProduct name: Amarene Candite Sgocciolate\nInternal code: SC0829B\nSupplier / Producer: ITALPROD S.R.L.\nAddress: Str. Sava Roșescu 91, Râmnicu Sărat, 125300, Buzău, Romania\nContact: +40 238 564 700 | office@italprod.eu\nIntended use: Ingredient for bakery, confectionery, dairy mixes.\n1) Composition / Ingredients\nIngredients: cherries, sugar, glucose-fruc"
+        }
+      ],
+      "error": null,
+      "status": "pass",
+      "description": "Product name appears in TDS OCR text.",
+      "source": "deterministic",
+      "reference": "TDS_PRODUCT_NAME_MATCH"
+    }
+  ],
+  "findings": [
+    {
+      "id": "EU1169_ALLERGENS_EMPHASIS",
+      "title": "Allergen emphasis (bold/contrast) — manual verification",
+      "status": "warning",
+      "source": "Label",
+      "fix": "Manually confirm allergens are emphasised in the ingredients list (bold/contrast/background) per Art 21.",
+      "reference": "EU1169_ALLERGENS_EMPHASIS",
+      "detail": "OCR text cannot confirm typographic emphasis (bold/contrast/background). Manual check required. Legal basis: Regulation (EU) No 1169/2011, Article 21(1)(b). Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "evidence": [
+        {
+          "source": "Label",
+          "page": null,
+          "excerpt": "Search for \"EU1169_ALLERGENS_EMPHASIS\" not found."
+        }
+      ]
+    },
+    {
+      "id": "EU1169_FBO_OPERATOR",
+      "title": "Food business operator name/address present (heuristic)",
+      "status": "warning",
+      "source": "Label",
+      "fix": "Ensure the responsible food business operator name and address are present.",
+      "reference": "EU1169_FBO_OPERATOR",
+      "detail": "No clear operator block detected (may be missing or OCR missed it). Legal basis: Regulation (EU) No 1169/2011, Article 9(1)(h). Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "evidence": [
+        {
+          "source": "Label",
+          "page": null,
+          "excerpt": "Search for \"EU1169_FBO_OPERATOR\" not found."
+        }
+      ]
+    },
+    {
+      "id": "EU1169_INSTRUCTIONS_USE",
+      "title": "Instructions for use (conditional)",
+      "status": "warning",
+      "source": "Label",
+      "fix": "If consumer needs instructions to use the product correctly, add them.",
+      "reference": "EU1169_INSTRUCTIONS_USE",
+      "detail": "Not detected. Only required where needed for appropriate use. Legal basis: Regulation (EU) No 1169/2011, Article 27 (where required). Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "evidence": [
+        {
+          "source": "Label",
+          "page": null,
+          "excerpt": "Search for \"EU1169_INSTRUCTIONS_USE\" not found."
+        }
+      ]
+    },
+    {
+      "id": "EU1169_ORIGIN_PROVENANCE",
+      "title": "Country of origin / provenance (conditional)",
+      "status": "warning",
+      "source": "Label",
+      "fix": "If origin is mandatory for your product/category or omission could mislead, add it.",
+      "reference": "EU1169_ORIGIN_PROVENANCE",
+      "detail": "Not detected. Required in specific cases (e.g., where omission misleads, or sector rules). Legal basis: Regulation (EU) No 1169/2011, Article 26. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "evidence": [
+        {
+          "source": "Label",
+          "page": null,
+          "excerpt": "Search for \"EU1169_ORIGIN_PROVENANCE\" not found."
+        }
+      ]
+    },
+    {
+      "id": "EU1169_NUTRITION_PER_100",
+      "title": "Nutrition values expressed per 100 g/ml (presence check)",
+      "status": "warning",
+      "source": "Label",
+      "fix": "Add “per 100 g” or “per 100 ml” basis to the nutrition declaration.",
+      "reference": "EU1169_NUTRITION_PER_100",
+      "detail": "Could not detect “per 100 g/ml” basis (OCR may have missed it). Legal basis: Regulation (EU) No 1169/2011, Article 32. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "evidence": [
+        {
+          "source": "Label",
+          "page": null,
+          "excerpt": "Search for \"EU1169_NUTRITION_PER_100\" not found."
+        }
+      ]
+    },
+    {
+      "id": "EU1169_FONT_SIZE",
+      "title": "Minimum font size / legibility — manual verification",
+      "status": "warning",
+      "source": "Label",
+      "fix": "Manually confirm x-height and legibility meet Article 13 minimum requirements.",
+      "reference": "EU1169_FONT_SIZE",
+      "detail": "Font size cannot be validated from OCR text. Manual check required. Legal basis: Regulation (EU) No 1169/2011, Article 13. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "evidence": [
+        {
+          "source": "Label",
+          "page": null,
+          "excerpt": "Search for \"EU1169_FONT_SIZE\" not found."
+        }
+      ]
+    },
+    {
+      "id": "XCHECK_NUTRITION_TDS",
+      "title": "Cross-check nutrition values (Label vs TDS)",
+      "status": "warning",
+      "source": "TDS",
+      "fix": "Align label nutrition declaration with the authoritative TDS/spec. Re-upload after correction.",
+      "reference": "XCHECK_NUTRITION_TDS",
+      "detail": "Nutrition panel detected, but values could not be reliably parsed from OCR (table/grid OCR noise). Try a higher-resolution label or a PDF label export. Legal basis: Regulation (EU) No 1169/2011, Article 9(1)(l) and Articles 30–34 (nutrition declaration). Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "evidence": [
+        {
+          "source": "TDS",
+          "page": 1,
+          "excerpt": "ore in a cool and dry place. After opening, keep refrigerated at 0-4°C and use within 7 days. 4) Shelf life/Traceability Best before: 24 months from production date. Lot/batch: printed on package. 5) Nutrition declaration (per 100 g) Energy: 1254 kJ / 292 kcal Fat: 0.11 g - of which saturates: 0.5 g Carbohydrate: 72.9 g - of which sugars: 69.8 g Protein: 0.3 g Salt: 0.09 g 6) C…"
+        },
+        {
+          "source": "Label",
+          "page": null,
+          "excerpt": "Search for \"nutrition|nutritional|valori nutrizionali|dichiarazione nutrizionale|energia|energy|kj|kcal|fat|grassi|saturates|saturi|carbohydrate|carboidrati|sugars|zuccheri|protein|proteine|salt|sale\" found."
+        },
+        {
+          "source": "TDS",
+          "page": 1,
+          "excerpt": "4) Shelf life/Traceability Best before: 24 months from production date. Lot/batch: printed on package. 5) Nutrition declaration (per 100 g) Energy: 1254 kJ / 292 kcal Fat: 0.11 g - of which saturates: 0.5 g Carbohydrate: 72.9 g - of which sugars: 69.8 g Protein: 0.3 g Salt: 0.09"
+        },
+        {
+          "source": "TDS",
+          "page": 1,
+          "excerpt": "Best before: 24 months from production date. Lot/batch: printed on package. 5) Nutrition declaration (per 100 g) Energy: 1254 kJ / 292 kcal Fat: 0.11 g - of which saturates: 0.5 g Carbohydrate: 72.9 g - of which sugars: 69.8 g Protein: 0.3 g Salt: 0.09 g 6) Country of sale / Labe"
+        },
+        {
+          "source": "TDS",
+          "page": 1,
+          "excerpt": "from production date. Lot/batch: printed on package. 5) Nutrition declaration (per 100 g) Energy: 1254 kJ / 292 kcal Fat: 0.11 g - of which saturates: 0.5 g Carbohydrate: 72.9 g - of which sugars: 69.8 g Protein: 0.3 g Salt: 0.09 g 6) Country of sale / Label languages"
+        },
+        {
+          "source": "TDS",
+          "page": 1,
+          "excerpt": "ate. Lot/batch: printed on package. 5) Nutrition declaration (per 100 g) Energy: 1254 kJ / 292 kcal Fat: 0.11 g - of which saturates: 0.5 g Carbohydrate: 72.9 g - of which sugars: 69.8 g Protein: 0.3 g Salt: 0.09 g 6) Country of sale / Label languages"
+        },
+        {
+          "source": "TDS",
+          "page": 1,
+          "excerpt": "ge. 5) Nutrition declaration (per 100 g) Energy: 1254 kJ / 292 kcal Fat: 0.11 g - of which saturates: 0.5 g Carbohydrate: 72.9 g - of which sugars: 69.8 g Protein: 0.3 g Salt: 0.09 g 6) Country of sale / Label languages"
+        },
+        {
+          "source": "TDS",
+          "page": 1,
+          "excerpt": "n declaration (per 100 g) Energy: 1254 kJ / 292 kcal Fat: 0.11 g - of which saturates: 0.5 g Carbohydrate: 72.9 g - of which sugars: 69.8 g Protein: 0.3 g Salt: 0.09 g 6) Country of sale / Label languages"
+        },
+        {
+          "source": "TDS",
+          "page": 1,
+          "excerpt": "per 100 g) Energy: 1254 kJ / 292 kcal Fat: 0.11 g - of which saturates: 0.5 g Carbohydrate: 72.9 g - of which sugars: 69.8 g Protein: 0.3 g Salt: 0.09 g 6) Country of sale / Label languages"
+        }
+      ]
+    },
+    {
+      "id": "XCHECK_ALLERGENS_TDS",
+      "title": "Cross-check allergens (TDS vs Label)",
+      "status": "warning",
+      "source": "Label",
+      "fix": "Verify Annex II allergens and ensure label declares them correctly (and emphasises them in ingredients list).",
+      "reference": "XCHECK_ALLERGENS_TDS",
+      "detail": "TDS likely refers to a different product; allergen cross-check is not decisive. Potential missing allergen declarations on label (found in TDS): milk Legal basis: Regulation (EU) No 1169/2011, Article 9(1)(c) and Article 21. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "evidence": [
+        {
+          "source": "Label",
+          "page": 1,
+          "excerpt": "AMARENE CANDITE SGOCCIOLATE italprod Ingredienti: ciliegie, zucchero, sciroppo di glucosio-fruttosio, concentrato di succo di amarene, regolatore di acidità: acido citrico, coloranti: concentrato a base di frutta e vegetali, aroma. Il pr"
+        },
+        {
+          "source": "Label",
+          "page": null,
+          "excerpt": "Search for \"milk Legal basis: Regulation \\(EU\\) No 1169/2011|Article 9\\(1\\)\\(c\\) and Article 21\" not found."
+        },
+        {
+          "source": "TDS",
+          "page": 1,
+          "excerpt": "p, concentrated sour cherry juice, acidity regulator: E300, citric acid, colouring agents of fruit/vegetable origin, flavouring. Allergens: May contain milk and nuts. 2) Net weight/Packaging Net weight: 4 kg (food grade bucket) Packaging: plastic bucket, sealed 3) Storage conditi"
+        },
+        {
+          "source": "Label",
+          "page": 1,
+          "excerpt": "AMARENE CANDITE SGOCCIOLATE italprod Ingredienti: ciliegie, zucchero, sciroppo di glucosio-fruttosio, concentrato di succo di amarene, regolatore di acidità: acido citrico, colo"
+        }
+      ]
+    },
+    {
+      "id": "EU1169_QUID",
+      "title": "QUID (ingredient % declaration) — conditional",
+      "status": "warning",
+      "source": "Label",
+      "fix": "If an ingredient is highlighted in the name/claims/images or is essential to characterise the food, declare its % (QUID).",
+      "reference": "EU1169_QUID",
+      "detail": "No clear highlighted-ingredient claim detected from available name/label text; QUID applicability could not be determined automatically. Legal basis: Regulation (EU) No 1169/2011, Article 22. Official text: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:02011R1169-20140219",
+      "evidence": [
+        {
+          "source": "Label",
+          "page": null,
+          "excerpt": "Search for \"EU1169_QUID\" not found."
+        }
+      ]
+    },
+    {
+      "id": "LABEL_ALLERGEN_INFO",
+      "title": "Allergen information detected",
+      "status": "warning",
+      "source": "deterministic",
+      "fix": "If allergens are present, ensure they are emphasized per EU 1169/2011 (formatting cannot be proven via OCR text alone).",
+      "reference": "LABEL_ALLERGEN_INFO",
+      "detail": "No allergen-related keyword/content detected (may be fine if no allergens, but often needs emphasis).",
+      "evidence": [
+        {
+          "source": "deterministic",
+          "page": null,
+          "excerpt": "No allergen-related keyword/content detected (may be fine if no allergens, but often needs emphasis)."
+        }
+      ]
+    }
+  ],
+  "cross_check": {
+    "matched": [
+      {
+        "field": "Product Name",
+        "note": "Match"
+      },
+      {
+        "field": "Net Quantity",
+        "note": "Match"
+      },
+      {
+        "field": "Ingredients Order",
+        "note": "Match"
+      },
+      {
+        "field": "Nutrition Values",
+        "note": "Match"
+      }
+    ],
+    "mismatched": [
+      {
+        "field": "Allergen List",
+        "note": "Label: missing; TDS: present"
+      },
+      {
+        "field": "Storage Conditions",
+        "note": "Label: missing; TDS: present"
+      }
+    ]
+  },
+  "print_pack": {
+    "signoff_fields": [
+      "Label Version ID",
+      "Artwork File Name",
+      "Print Vendor",
+      "Approval Owner (QA)",
+      "Date",
+      "Signature"
+    ],
+    "prepress_checklist": [
+      "Mandatory particulars fully in target language for sale country",
+      "Allergen emphasis applied consistently (ingredients + contains statements)",
+      "QUID declared where ingredients are emphasized (text/imagery)",
+      "Net quantity format correct (units/placement/legibility check)",
+      "Nutrition declaration complete and formatted correctly (per 100 g)",
+      "Operator name + full address present",
+      "Lot/expiry placeholders present (if applicable) and legible",
+      "Font size/contrast acceptable for print readability",
+      "Barcode area clear + quiet zone respected",
+      "Language consistency across panels",
+      "Claims reviewed (if present) — mark \"requires separate verification\"",
+      "Cross-check with TDS confirms formulation + allergens + nutrition values"
+    ],
+    "attachments_checklist": [
+      "PDF compliance report",
+      "Final artwork proof (PDF)",
+      "Supplier TDS version used",
+      "Approval email/thread reference"
+    ],
+    "printer_notes": "Verify legibility, panel consistency, safe margins/trim, and final proof sign-off before production run."
+  },
+  "next_steps": [
+    {
+      "priority": "P2",
+      "task": "Manually confirm allergens are emphasised in the ingredients list (bold/contrast/background) per Art 21."
+    },
+    {
+      "priority": "P2",
+      "task": "Ensure the responsible food business operator name and address are present."
+    },
+    {
+      "priority": "P3",
+      "task": "Complete print verification sign-off"
+    },
+    {
+      "priority": "P3",
+      "task": "Resolve Halal certificate gaps (if exporting)"
+    }
+  ],
+  "artifacts": {
+    "run_dir": "/srv/ava/data/runs/D1O2I2s3Nb6Z74yU",
+    "files": [
+      "evidence_text.txt",
+      "label.png",
+      "label_page_index.json",
+      "label_pages.json",
+      "label_text.txt",
+      "request.json",
+      "tds.pdf",
+      "tds_page_index.json",
+      "tds_pages.json",
+      "tds_text.txt"
+    ]
+  },
+  "evidence_confidence": 70,
+  "evidence_confidence_detail": {
+    "label": 0.6,
+    "tds": 0.8,
+    "overall": 0.7,
+    "notes": [
+      "Text successfully read from both documents."
+    ]
+  },
+  "compliance_score": 70,
+  "evidence_confidence_percent": 70,
+  "ts": "2026-01-20T00:23:51.006Z",
+  "product": {
+    "product_name": "Amarene candite sgocciolate",
+    "company_name": "Italprod S.R.L.",
+    "country_of_sale": "Italy",
+    "languages_provided": [
+      "Italian"
+    ],
+    "halal_enabled": true
+  },
+  "product_name": "Amarene candite sgocciolate",
+  "company_name": "Italprod S.R.L.",
+  "country_of_sale": "Italy",
+  "languages_provided": [
+    "Italian"
+  ],
+  "halal": true,
+  "halalChecks": [
+    {
+      "id": "halal_certificate_provided",
+      "title": "Halal Certificate Provided",
+      "status": "critical",
+      "severity": "high",
+      "source": "Input",
+      "detail": "No Halal certificate uploaded for verification",
+      "fix": "Obtain valid Halal certificate from accredited body"
+    },
+    {
+      "id": "certificate_expiry_valid",
+      "title": "Certificate Validity / Expiry",
+      "status": "warning",
+      "severity": "medium",
+      "source": "N/A",
+      "detail": "Cannot verify — certificate not provided",
+      "fix": "Ensure certificate covers production dates"
+    },
+    {
+      "id": "issuing_body_listed",
+      "title": "Issuing Body Listed",
+      "status": "warning",
+      "severity": "medium",
+      "source": "N/A",
+      "detail": "Cannot verify accreditation status",
+      "fix": "Confirm issuing body recognized by target market"
+    },
+    {
+      "id": "animal_derived_ingredient_risk",
+      "title": "Animal-Derived Ingredient Risk",
+      "status": "warning",
+      "severity": "medium",
+      "source": "TDS",
+      "detail": "Animal-derived ingredients detected — source verification required",
+      "fix": "Confirm dairy/meat sources meet Halal requirements"
+    },
+    {
+      "id": "gelatin_enzymes_check",
+      "title": "Gelatin / Enzymes Check",
+      "status": "pass",
+      "severity": "low",
+      "source": "TDS",
+      "detail": "No gelatin or animal enzymes declared",
+      "fix": "Confirm gelatin/enzymes are Halal-compliant or remove"
+    },
+    {
+      "id": "alcohol_solvent_carrier_flags",
+      "title": "Alcohol / Solvent Carrier Flags",
+      "status": "warning",
+      "severity": "medium",
+      "source": "TDS",
+      "detail": "Flavourings detected — carrier not specified",
+      "fix": "Confirm non-alcohol carrier with supplier"
+    },
+    {
+      "id": "e_number_source_verification",
+      "title": "E-Number Source Verification",
+      "status": "pass",
+      "severity": "medium",
+      "source": "Label",
+      "detail": "No high-risk E-numbers detected",
+      "fix": "Request Halal statement from E-number suppliers"
+    },
+    {
+      "id": "cross_contamination_statement",
+      "title": "Cross-Contamination Statement",
+      "status": "pass",
+      "severity": "high",
+      "source": "TDS",
+      "detail": "Cross-contamination controls documented",
+      "fix": "Obtain facility Halal compliance statement"
+    },
+    {
+      "id": "traceability_fields_complete",
+      "title": "Traceability Fields Complete",
+      "status": "pass",
+      "severity": "low",
+      "source": "TDS",
+      "detail": "Lot traceability documented",
+      "fix": "Ensure lot traceability is documented"
+    },
+    {
+      "id": "halal_logo_usage_check",
+      "title": "Halal Logo Usage Check",
+      "status": "warning",
+      "severity": "medium",
+      "source": "Label",
+      "detail": "No Halal logo present on label",
+      "fix": "Add authorized logo only with valid certification"
+    }
+  ],
+  "corrections": [],
+  "files": {
+    "pdf": "/api/runs/D1O2I2s3Nb6Z74yU/report.pdf",
+    "json": "/api/runs/D1O2I2s3Nb6Z74yU/report.json"
+  }
+}

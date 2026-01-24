@@ -66,6 +66,7 @@ export default function ReportPage() {
   const navigate = useNavigate();
   const { isAdmin, creditsDisplay, deductCredits, token, loading: authLoading, logout, activeEmail } = useAuth();
   const [run, setRun] = useState(null);
+  const [reportView, setReportView] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   
@@ -99,6 +100,15 @@ export default function ReportPage() {
       try {
         const reportData = await runAPI.getReport(runId);
         setRun(reportData);
+        try {
+          const viewData = await runAPI.getReportView(runId);
+          setReportView(viewData);
+        } catch (viewError) {
+          if (viewError?.response?.status !== 404) {
+            console.warn('Report view not available:', viewError);
+          }
+          setReportView(null);
+        }
       } catch (error) {
         const status = error?.response?.status;
         if (status === 401) {
@@ -173,6 +183,15 @@ export default function ReportPage() {
       // Immediately refetch report.json to get updated data with new correction
       const updatedReport = await runAPI.getReport(runId);
       setRun(updatedReport);
+      try {
+        const updatedView = await runAPI.getReportView(runId);
+        setReportView(updatedView);
+      } catch (viewError) {
+        if (viewError?.response?.status !== 404) {
+          console.warn('Report view not available:', viewError);
+        }
+        setReportView(null);
+      }
       
       // Clear the form
       setCorrectionsText('');
@@ -198,9 +217,9 @@ export default function ReportPage() {
   // ============================================================================
   // Premium PDF download (auth-protected)
   // ============================================================================
-  const handleDownloadPdf = async () => {
+  const handleDownloadPdf = async (variant = 'executive') => {
     try {
-      await runAPI.downloadPremiumPdf(runId, run);
+      await runAPI.downloadPremiumPdf(runId, run, variant);
     } catch (error) {
       console.error('PDF download error:', error);
       setToast({ message: 'Failed to download PDF', type: 'error' });
@@ -278,7 +297,12 @@ export default function ReportPage() {
   const corrections = Array.isArray(run?.corrections) ? run.corrections : [];
 
   return (
-    <div className="min-h-screen bg-[#070A12] text-white">
+    <div className="min-h-screen text-white relative overflow-hidden bg-[#05070f]">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(91,108,255,0.18),_transparent_55%)]"></div>
+        <div className="absolute -top-32 right-0 h-96 w-96 rounded-full bg-[radial-gradient(circle,_rgba(14,165,233,0.18),_transparent_60%)]"></div>
+        <div className="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-[radial-gradient(circle,_rgba(16,185,129,0.12),_transparent_65%)]"></div>
+      </div>
       {/* Toast Notification */}
       <AnimatePresence>
         {toast && (
@@ -291,7 +315,7 @@ export default function ReportPage() {
       </AnimatePresence>
 
       {/* Navigation */}
-      <nav className="fixed top-0 inset-x-0 z-50 bg-[#070A12]/60 backdrop-blur-xl border-b border-white/[0.06]">
+      <nav className="fixed top-0 inset-x-0 z-50 bg-[#05070f]/70 backdrop-blur-xl border-b border-white/[0.06]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/dashboard" className="flex items-center gap-2.5">
@@ -318,11 +342,19 @@ export default function ReportPage() {
               </Link>
               <Button
                 variant="outline"
-                onClick={handleDownloadPdf}
+                onClick={() => handleDownloadPdf('executive')}
                 className="border-white/[0.14] text-white/80 hover:bg-white/[0.04]"
               >
                 <Download className="mr-2 h-4 w-4" />
-                Download Premium PDF
+                Download Executive PDF
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleDownloadPdf('full')}
+                className="border-white/[0.14] text-white/80 hover:bg-white/[0.04]"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Download Full Audit PDF
               </Button>
             </div>
           </div>
@@ -330,9 +362,9 @@ export default function ReportPage() {
       </nav>
 
       {/* Content */}
-      <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+      <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="max-w-5xl mx-auto">
-          <ReportView report={run} runIdFallback={runId} />
+          <ReportView report={run} reportView={reportView} runIdFallback={runId} />
 
           {/* Action Buttons */}
           <motion.div
@@ -342,11 +374,18 @@ export default function ReportPage() {
             className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <Button
-              onClick={handleDownloadPdf}
+              onClick={() => handleDownloadPdf('executive')}
               className="bg-[#5B6CFF] hover:bg-[#4A5BEE] text-white h-12 px-8 rounded-xl"
             >
               <Download className="mr-2 h-4 w-4" />
-              Download Premium PDF
+              Download Executive PDF
+            </Button>
+            <Button
+              onClick={() => handleDownloadPdf('full')}
+              className="bg-white/[0.08] hover:bg-white/[0.12] text-white h-12 px-8 rounded-xl border border-white/[0.16]"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Download Full Audit PDF
             </Button>
             <Button
               onClick={() => navigate('/run')}
@@ -502,7 +541,7 @@ export default function ReportPage() {
       </div>
 
       {/* Footer */}
-      <footer className="py-8 px-4 border-t border-white/[0.06]">
+      <footer className="py-8 px-4 border-t border-white/[0.06] relative z-10">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-white/40" />

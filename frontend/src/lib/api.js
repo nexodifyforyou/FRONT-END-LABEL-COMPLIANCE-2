@@ -103,6 +103,12 @@ export const runAPI = {
     const response = await api.get(`/api/runs/${runId}/report.json`);
     return response.data;
   },
+
+  // GET /api/runs/:run_id/report_view.json
+  getReportView: async (runId) => {
+    const response = await api.get(`/api/runs/${runId}/report_view.json`);
+    return response.data;
+  },
   
   // POST /api/runs/:run_id/corrections
   submitCorrections: async (runId, correctionsText, overrideFieldsJson = '{}') => {
@@ -135,9 +141,11 @@ export const runAPI = {
   },
 
   // Download Premium PDF with auth (triggers browser download)
-  downloadPremiumPdf: async (runId, report = null) => {
+  downloadPremiumPdf: async (runId, report = null, variant = 'executive') => {
     const pdfPath = report?.pdf_url || report?.files?.pdf;
-    const resolved = resolveApiUrl(pdfPath) || `${API_BASE_URL}/api/runs/${runId}/report.pdf`;
+    const resolved = variant === 'full'
+      ? `${API_BASE_URL}/api/runs/${runId}/report_full.pdf`
+      : resolveApiUrl(pdfPath) || `${API_BASE_URL}/api/runs/${runId}/report.pdf`;
     const cacheBuster = `t=${Date.now()}`;
     const url = resolved.includes('?') ? `${resolved}&${cacheBuster}` : `${resolved}?${cacheBuster}`;
 
@@ -150,7 +158,8 @@ export const runAPI = {
 
     const blob = response.data;
     const safeId = sanitizeFilename(runId);
-    const filename = `AVA_Preflight_${safeId}.pdf`;
+    const suffix = variant === 'full' ? '_Full' : '';
+    const filename = `AVA_Preflight_${safeId}${suffix}.pdf`;
     const blobUrl = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = blobUrl;
