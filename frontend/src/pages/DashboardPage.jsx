@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/button';
@@ -28,7 +28,6 @@ import {
   RefreshCw,
   Users,
   BookOpen,
-  Zap,
   Target,
   Activity,
   Loader2,
@@ -151,6 +150,62 @@ const normalizeScore = (score) => {
 
 const isPassVerdict = (verdict) => normalizeVerdict(verdict) === 'PASS';
 
+const computeKpis = (items) => {
+  const safeItems = Array.isArray(items) ? items : [];
+  const now = Date.now();
+  const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+  let pass_count = 0;
+  let fail_count = 0;
+  let needs_review_count = 0;
+  let scoreSum = 0;
+  let scoreCount = 0;
+  let credits_spent_total = 0;
+  let runs_last_7_days = 0;
+  let lastRunTs = 0;
+
+  safeItems.forEach((run) => {
+    const verdict = normalizeVerdict(run?.verdict);
+    if (verdict === 'PASS') pass_count += 1;
+    if (verdict === 'FAIL') fail_count += 1;
+    if (verdict === 'NEEDS_REVIEW') needs_review_count += 1;
+
+    const scoreValue = normalizeScore(run?.score);
+    if (typeof scoreValue === 'number' && !Number.isNaN(scoreValue)) {
+      scoreSum += scoreValue;
+      scoreCount += 1;
+    }
+
+    if (typeof run?.cost === 'number' && Number.isFinite(run.cost)) {
+      credits_spent_total += run.cost;
+    }
+
+    const runDateValue = getRunDateValue(run);
+    if (runDateValue >= sevenDaysAgo && runDateValue > 0) {
+      runs_last_7_days += 1;
+    }
+    if (runDateValue > lastRunTs) {
+      lastRunTs = runDateValue;
+    }
+  });
+
+  const total_runs = safeItems.length;
+  const pass_rate_percent = total_runs > 0 ? Math.round((pass_count / total_runs) * 100) : 0;
+  const avg_score = scoreCount > 0 ? Math.round(scoreSum / scoreCount) : 0;
+  const last_run_at = lastRunTs ? new Date(lastRunTs).toISOString() : '—';
+
+  return {
+    total_runs,
+    fail_count,
+    needs_review_count,
+    pass_count,
+    pass_rate_percent,
+    avg_score,
+    runs_last_7_days,
+    credits_spent_total,
+    last_run_at,
+  };
+};
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user, wallet, credits, creditsDisplay, isAdmin, logout, token, loading, activeEmail } = useAuth();
@@ -178,6 +233,7 @@ export default function DashboardPage() {
   });
   const [backendStatus, setBackendStatus] = useState('unknown'); // 'unknown', 'checking', 'online', 'offline', 'unauthorized'
   const hasWarnedRunShape = useRef(false);
+  const kpis = useMemo(() => computeKpis(runs), [runs]);
 
   const fetchRuns = useCallback(async () => {
     if (!token) {
@@ -305,11 +361,6 @@ export default function DashboardPage() {
     setChecklist(newChecklist);
     localStorage.setItem('ava_checklist', JSON.stringify(newChecklist));
   };
-
-  const lastRunScore = normalizeScore(dashboardStats.lastRun?.score);
-  const lastRunLabel = dashboardStats.lastRun
-    ? `${formatVerdictLabel(normalizeVerdict(dashboardStats.lastRun.verdict))}${lastRunScore !== null ? ` · ${lastRunScore}%` : ''}`
-    : 'No runs';
 
   const handleLogout = () => {
     logout();
@@ -509,43 +560,61 @@ export default function DashboardPage() {
 
         <div className="p-8 space-y-6">
           {/* Row 1: KPI Strip */}
-          <div className="grid grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             <KPITile
               icon={Activity}
-              label="Runs (7d)"
-              value={runs.length > 0 ? dashboardStats.runs7d : '—'}
-              subtext={runs.length === 0 ? 'Run your first preflight' : null}
-              color={runs.length === 0 ? 'muted' : 'default'}
+              label="Total Runs"
+              value={kpis.total_runs}
+              subtext={kpis.total_runs === 0 ? 'Run your first preflight' : null}
+              color={kpis.total_runs === 0 ? 'muted' : 'default'}
             />
             <KPITile
-              icon={BarChart3}
-              label="Runs (30d)"
-              value={runs.length > 0 ? dashboardStats.runs30d : '—'}
-              color={runs.length === 0 ? 'muted' : 'default'}
+              icon={CheckCircle}
+              label="Pass"
+              value={kpis.pass_count}
+              color={kpis.pass_count > 0 ? 'success' : 'muted'}
+            />
+            <KPITile
+              icon={AlertTriangle}
+              label="Needs Review"
+              value={kpis.needs_review_count}
+              color={kpis.needs_review_count > 0 ? 'warning' : 'muted'}
+            />
+            <KPITile
+              icon={XCircle}
+              label="Fail"
+              value={kpis.fail_count}
+              color={kpis.fail_count > 0 ? 'danger' : 'muted'}
             />
             <KPITile
               icon={Target}
               label="Pass Rate"
-              value={runs.length > 0 ? `${dashboardStats.passRate}%` : '—'}
-              color={runs.length === 0 ? 'muted' : dashboardStats.passRate >= 80 ? 'success' : dashboardStats.passRate >= 50 ? 'warning' : 'danger'}
+              value={`${kpis.pass_rate_percent}%`}
+              color={kpis.total_runs === 0 ? 'muted' : kpis.pass_rate_percent >= 80 ? 'success' : kpis.pass_rate_percent >= 50 ? 'warning' : 'danger'}
             />
             <KPITile
-              icon={AlertCircle}
-              label="Avg Issues"
-              value={runs.length > 0 ? (dashboardStats.avgIssues ?? '—') : '—'}
-              color={runs.length === 0 ? 'muted' : 'default'}
+              icon={BarChart3}
+              label="Avg Score"
+              value={kpis.avg_score}
+              color={kpis.avg_score > 0 ? 'default' : 'muted'}
             />
             <KPITile
-              icon={Zap}
-              label="Avg Runtime"
-              value={dashboardStats.avgRuntime ?? '—'}
-              color={dashboardStats.avgRuntime ? 'default' : 'muted'}
+              icon={Clock}
+              label="Runs (7d)"
+              value={kpis.runs_last_7_days}
+              color={kpis.runs_last_7_days > 0 ? 'default' : 'muted'}
             />
             <KPITile
-              icon={CheckCircle}
-              label="Last Run"
-              value={lastRunLabel}
-              color={dashboardStats.lastRun ? (isPassVerdict(dashboardStats.lastRun.verdict) ? 'success' : normalizeVerdict(dashboardStats.lastRun.verdict) === 'FAIL' ? 'danger' : 'warning') : 'muted'}
+              icon={Coins}
+              label="Credits Spent"
+              value={kpis.credits_spent_total}
+              color={kpis.credits_spent_total > 0 ? 'default' : 'muted'}
+            />
+            <KPITile
+              icon={History}
+              label="Last Run At"
+              value={kpis.last_run_at}
+              color={kpis.last_run_at === '—' ? 'muted' : 'default'}
             />
           </div>
 
