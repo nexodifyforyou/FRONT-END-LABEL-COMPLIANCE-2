@@ -116,7 +116,7 @@ export default function RunHistoryPage() {
 
   const handleDownloadPdf = async (runId) => {
     try {
-      await runAPI.downloadPremiumPdf(runId, null, 'executive');
+      await runAPI.downloadPremiumPdf(runId);
     } catch (error) {
       console.error('PDF download error:', error);
       window.open(`${API_BASE_URL}/api/runs/${runId}/report.pdf`, '_blank');

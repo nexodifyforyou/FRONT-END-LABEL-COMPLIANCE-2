@@ -317,7 +317,7 @@ export default function DashboardPage() {
 
   const handleDownloadPdf = async (run) => {
     try {
-      await runAPI.downloadPremiumPdf(run.run_id, null);
+      await runAPI.downloadPremiumPdf(run.run_id);
 
       // Mark checklist
       if (!checklist.downloadPdf) {

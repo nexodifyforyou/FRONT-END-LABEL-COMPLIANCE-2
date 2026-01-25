@@ -217,7 +217,7 @@ export default function ReportPage() {
   // ============================================================================
   const handleDownloadPdf = async () => {
     try {
-      await runAPI.downloadPremiumPdf(runId, run);
+      await runAPI.downloadPremiumPdf(runId);
     } catch (error) {
       console.error('PDF download error:', error);
       const status = error?.response?.status;
@@ -365,7 +365,7 @@ export default function ReportPage() {
               className="bg-[#5B6CFF] hover:bg-[#4A5BEE] text-white h-12 px-8 rounded-xl"
             >
               <Download className="mr-2 h-4 w-4" />
-              Download PDF
+              Download Premium PDF
             </Button>
             <Button
               onClick={() => navigate('/run')}

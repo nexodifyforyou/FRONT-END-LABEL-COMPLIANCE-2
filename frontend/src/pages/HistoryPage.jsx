@@ -170,7 +170,7 @@ export default function HistoryPage() {
 
   const handleDownloadPdf = async (run) => {
     try {
-      await runAPI.downloadPremiumPdf(run.run_id, null);
+      await runAPI.downloadPremiumPdf(run.run_id);
     } catch (error) {
       console.error('PDF download error:', error);
       // Fallback to direct link
