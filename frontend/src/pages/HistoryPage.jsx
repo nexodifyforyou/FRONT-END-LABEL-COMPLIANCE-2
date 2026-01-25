@@ -35,25 +35,28 @@ import {
   Loader2,
 } from 'lucide-react';
 import { runAPI, API_BASE_URL } from '../lib/api';
+import { formatVerdictLabel, normalizeVerdict } from '../utils/verdict';
 
 // Verdict Badge component
 const VerdictBadge = ({ verdict }) => {
+  const normalizedVerdict = normalizeVerdict(verdict);
+  const label = formatVerdictLabel(normalizedVerdict);
   const styles = {
     PASS: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-    CONDITIONAL: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+    NEEDS_REVIEW: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
     FAIL: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
   };
   const icons = {
     PASS: CheckCircle,
-    CONDITIONAL: AlertTriangle,
+    NEEDS_REVIEW: AlertTriangle,
     FAIL: XCircle,
   };
-  const Icon = icons[verdict] || AlertTriangle;
+  const Icon = icons[normalizedVerdict] || AlertTriangle;
   
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border ${styles[verdict] || styles.CONDITIONAL}`}>
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border ${styles[normalizedVerdict] || styles.NEEDS_REVIEW}`}>
       <Icon className="h-3.5 w-3.5" />
-      {verdict}
+      {label}
     </span>
   );
 };
@@ -156,8 +159,9 @@ export default function HistoryPage() {
       }
       
       // Verdict filter
-      if (verdictFilter !== 'all' && run.verdict !== verdictFilter) {
-        return false;
+      if (verdictFilter !== 'all') {
+        const runVerdict = normalizeVerdict(run.verdict || run.status);
+        if (runVerdict !== verdictFilter) return false;
       }
       
       // Halal filter
@@ -259,7 +263,7 @@ export default function HistoryPage() {
             <SelectContent className="bg-[#0f1219] border-white/[0.12]">
               <SelectItem value="all" className="text-white/90 focus:bg-white/[0.08]">All Verdicts</SelectItem>
               <SelectItem value="PASS" className="text-white/90 focus:bg-white/[0.08]">Pass</SelectItem>
-              <SelectItem value="CONDITIONAL" className="text-white/90 focus:bg-white/[0.08]">Conditional</SelectItem>
+              <SelectItem value="NEEDS_REVIEW" className="text-white/90 focus:bg-white/[0.08]">Needs review</SelectItem>
               <SelectItem value="FAIL" className="text-white/90 focus:bg-white/[0.08]">Fail</SelectItem>
             </SelectContent>
           </Select>

@@ -23,6 +23,7 @@ import {
 import { getSeverityColor } from '../lib/checkDefinitions';
 import { HALAL_CHECK_DEFINITIONS } from '../lib/halalChecks';
 import { normalizeReport } from '../lib/reportViewModel';
+import { formatVerdictLabel, normalizeVerdict } from '../utils/verdict';
 
 const cardBase = 'bg-white/[0.035] border border-white/[0.06] rounded-2xl p-6 shadow-[0_18px_40px_rgba(0,0,0,0.35)]';
 const cardInset = 'bg-[#0B1020]/70 rounded-xl p-4';
@@ -104,14 +105,16 @@ const CategoryChip = ({ icon: Icon, label, active }) => (
 
 // Verdict Badge
 const VerdictBadge = ({ verdict }) => {
+  const normalizedVerdict = normalizeVerdict(verdict);
+  const label = formatVerdictLabel(normalizedVerdict);
   const styles = {
     PASS: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-    CONDITIONAL: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+    NEEDS_REVIEW: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
     FAIL: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
   };
   return (
-    <span className={`px-3 py-1 text-sm font-medium rounded-full border ${styles[verdict] || styles.CONDITIONAL}`}>
-      {verdict}
+    <span className={`px-3 py-1 text-sm font-medium rounded-full border ${styles[normalizedVerdict] || styles.NEEDS_REVIEW}`}>
+      {label}
     </span>
   );
 };
@@ -158,7 +161,7 @@ export default function ReportView({ report, reportView, runIdFallback }) {
 
   const complianceScore = safeNumber(kpiBlock.score ?? view.summary?.score, 0);
   const evidenceConfidence = safeNumber(kpiBlock.evidence_confidence ?? view.summary?.evidence_confidence, 0);
-  const verdict = safeString(view.summary?.verdict, 'CONDITIONAL');
+  const verdict = normalizeVerdict(safeString(view.summary?.verdict, 'NEEDS_REVIEW'));
   const runIdDisplay = safeString(view.meta?.run_id, runIdFallback || 'Unknown');
   const generatedAt = view.meta?.created_at ? new Date(view.meta.created_at) : null;
   const generatedAtLabel = generatedAt && !Number.isNaN(generatedAt.getTime())

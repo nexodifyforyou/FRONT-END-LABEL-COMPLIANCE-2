@@ -1,3 +1,5 @@
+import { normalizeVerdict } from '../utils/verdict';
+
 const safeText = (value, fallback = 'Not provided') => {
   if (value === null || value === undefined) return fallback;
   if (typeof value === 'string') {
@@ -103,7 +105,7 @@ export const normalizeReport = (report) => {
   ];
 
   const summary = {
-    verdict: safeText(report?.verdict, 'CONDITIONAL'),
+    verdict: normalizeVerdict(safeText(report?.verdict, 'NEEDS_REVIEW')),
     counts,
     score: report?.compliance_score ?? report?.score ?? 0,
     evidence_confidence: getEvidenceConfidence(report),

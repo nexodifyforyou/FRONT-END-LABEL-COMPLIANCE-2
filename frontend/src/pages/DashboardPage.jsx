@@ -34,28 +34,29 @@ import {
   Loader2,
 } from 'lucide-react';
 import { runAPI, API_BASE_URL } from '../lib/api';
+import { formatVerdictLabel, normalizeVerdict } from '../utils/verdict';
 
 // Verdict Badge component
 const VerdictBadge = ({ verdict, size = 'sm' }) => {
+  const normalizedVerdict = normalizeVerdict(verdict);
+  const label = formatVerdictLabel(normalizedVerdict);
   const styles = {
     PASS: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-    WARN: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-    CONDITIONAL: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+    NEEDS_REVIEW: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
     FAIL: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
   };
   const icons = {
     PASS: CheckCircle,
-    WARN: AlertTriangle,
-    CONDITIONAL: AlertTriangle,
+    NEEDS_REVIEW: AlertTriangle,
     FAIL: XCircle,
   };
-  const Icon = icons[verdict] || AlertTriangle;
+  const Icon = icons[normalizedVerdict] || AlertTriangle;
   const sizeClass = size === 'lg' ? 'px-3 py-1.5 text-sm' : 'px-2 py-0.5 text-xs';
   
   return (
-    <span className={`inline-flex items-center gap-1.5 ${sizeClass} font-medium rounded-full border ${styles[verdict] || styles.CONDITIONAL}`}>
+    <span className={`inline-flex items-center gap-1.5 ${sizeClass} font-medium rounded-full border ${styles[normalizedVerdict] || styles.NEEDS_REVIEW}`}>
       <Icon className={size === 'lg' ? 'h-4 w-4' : 'h-3 w-3'} />
-      {verdict}
+      {label}
     </span>
   );
 };
@@ -148,7 +149,7 @@ const normalizeScore = (score) => {
   return score <= 1 ? Math.round(score * 100) : Math.round(score);
 };
 
-const isPassVerdict = (verdict) => (verdict || '').toUpperCase() === 'PASS';
+const isPassVerdict = (verdict) => normalizeVerdict(verdict) === 'PASS';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -242,7 +243,7 @@ export default function DashboardPage() {
     const avgIssues = null;
     const trend = recentRuns.slice().reverse().map((run) => ({
       runId: run.run_id,
-      verdict: run.verdict,
+      verdict: normalizeVerdict(run.verdict),
       score: run.score,
       label: run.product_name,
     }));
@@ -307,7 +308,7 @@ export default function DashboardPage() {
 
   const lastRunScore = normalizeScore(dashboardStats.lastRun?.score);
   const lastRunLabel = dashboardStats.lastRun
-    ? `${dashboardStats.lastRun.verdict || '—'}${lastRunScore !== null ? ` · ${lastRunScore}%` : ''}`
+    ? `${formatVerdictLabel(normalizeVerdict(dashboardStats.lastRun.verdict))}${lastRunScore !== null ? ` · ${lastRunScore}%` : ''}`
     : 'No runs';
 
   const handleLogout = () => {
@@ -544,7 +545,7 @@ export default function DashboardPage() {
               icon={CheckCircle}
               label="Last Run"
               value={lastRunLabel}
-              color={dashboardStats.lastRun ? (isPassVerdict(dashboardStats.lastRun.verdict) ? 'success' : dashboardStats.lastRun.verdict === 'FAIL' ? 'danger' : 'warning') : 'muted'}
+              color={dashboardStats.lastRun ? (isPassVerdict(dashboardStats.lastRun.verdict) ? 'success' : normalizeVerdict(dashboardStats.lastRun.verdict) === 'FAIL' ? 'danger' : 'warning') : 'muted'}
             />
           </div>
 
@@ -723,7 +724,7 @@ export default function DashboardPage() {
                     {dashboardStats.trend.map((run, i) => {
                       const scoreValue = normalizeScore(run.score);
                       const barHeight = scoreValue !== null ? Math.max(20, scoreValue / 2) : 28;
-                      const verdictValue = (run.verdict || '').toUpperCase();
+                      const verdictValue = normalizeVerdict(run.verdict);
                       const barColor = verdictValue === 'PASS'
                         ? 'bg-emerald-500'
                         : verdictValue === 'FAIL'
@@ -735,7 +736,7 @@ export default function DashboardPage() {
                           key={run.runId || i}
                           className={`w-4 rounded ${barColor}`}
                           style={{ height: `${barHeight}px` }}
-                          title={`${run.label || 'Run'}: ${run.verdict || 'Unknown'}${titleScore}`}
+                          title={`${run.label || 'Run'}: ${formatVerdictLabel(normalizeVerdict(run.verdict))}${titleScore}`}
                         />
                       );
                     })}

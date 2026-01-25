@@ -35,6 +35,7 @@ import {
   Download,
   ArrowUpDown,
 } from 'lucide-react';
+import { formatVerdictLabel, normalizeVerdict } from '../../utils/verdict';
 
 export default function RunHistoryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -245,14 +246,14 @@ export default function RunHistoryPage() {
                           </TableCell>
                           <TableCell>
                             {(() => {
-                              const runStatus = run.verdict || run.status;
+                              const runStatus = normalizeVerdict(run.verdict || run.status);
                               return (
                             <span className={cn(
                               'inline-flex items-center gap-1.5 px-2 py-1 rounded-sm text-xs font-medium border',
                               getStatusBadge(runStatus)
                             )}>
                               {getStatusIcon(runStatus)}
-                              {runStatus || 'Pending'}
+                              {formatVerdictLabel(runStatus) || 'Pending'}
                             </span>
                               );
                             })()}
