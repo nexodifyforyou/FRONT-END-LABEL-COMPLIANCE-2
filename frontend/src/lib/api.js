@@ -142,9 +142,7 @@ export const runAPI = {
 
   // Download Premium PDF with auth (triggers browser download)
   downloadPremiumPdf: async (runId, report = null, variant = 'executive') => {
-    const resolved = variant === 'full'
-      ? `${API_BASE_URL}/api/runs/${runId}/report_full.pdf`
-      : `${API_BASE_URL}/api/runs/${runId}/report.pdf`;
+    const resolved = `${API_BASE_URL}/api/runs/${runId}/report.pdf`;
     const cacheBuster = `t=${Date.now()}`;
     const url = resolved.includes('?') ? `${resolved}&${cacheBuster}` : `${resolved}?${cacheBuster}`;
 
@@ -157,8 +155,7 @@ export const runAPI = {
 
     const blob = response.data;
     const safeId = sanitizeFilename(runId);
-    const suffix = variant === 'full' ? '_FullAudit' : '_Executive';
-    const filename = `AVA_Preflight_${safeId}${suffix}.pdf`;
+    const filename = `AVA_Preflight_${safeId}.pdf`;
     const blobUrl = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = blobUrl;
