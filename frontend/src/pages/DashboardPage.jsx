@@ -69,7 +69,7 @@ const HalalBadge = () => (
 );
 
 // KPI Tile Component
-const KPITile = ({ icon: Icon, label, value, subtext, color = 'default' }) => {
+const KPITile = ({ icon: Icon, label, value, subtext, color = 'default', valueClassName = '' }) => {
   const colors = {
     default: 'text-white/90',
     success: 'text-emerald-400',
@@ -84,7 +84,7 @@ const KPITile = ({ icon: Icon, label, value, subtext, color = 'default' }) => {
         <Icon className="h-4 w-4 text-white/40" />
         <span className="text-xs text-white/50 uppercase tracking-wider">{label}</span>
       </div>
-      <div className={`text-2xl font-bold ${colors[color]}`}>{value}</div>
+      <div className={`text-2xl font-bold ${colors[color]} ${valueClassName}`}>{value}</div>
       {subtext && <div className="text-xs text-white/40 mt-1">{subtext}</div>}
     </div>
   );
@@ -143,6 +143,40 @@ const formatRunDate = (run) => {
   return date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString() : '—';
 };
 
+const formatRunDateTime = (value) => {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return '—';
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+  const parts = formatter.formatToParts(date);
+  const lookup = parts.reduce((acc, part) => {
+    if (part.type !== 'literal') acc[part.type] = part.value;
+    return acc;
+  }, {});
+  const { day, month, year, hour, minute } = lookup;
+  if (!day || !month || !year || !hour || !minute) return '—';
+  return `${day} ${month} ${year}, ${hour}:${minute}`;
+};
+
+const formatTimeAgo = (value, now = Date.now()) => {
+  const ts = typeof value === 'number' ? value : new Date(value).getTime();
+  if (!ts || Number.isNaN(ts)) return null;
+  const diffMs = Math.max(0, now - ts);
+  const minuteMs = 60_000;
+  const hourMs = 60 * minuteMs;
+  const dayMs = 24 * hourMs;
+  if (diffMs < minuteMs) return 'just now';
+  if (diffMs < hourMs) return `${Math.max(1, Math.floor(diffMs / minuteMs))}m ago`;
+  if (diffMs < dayMs) return `${Math.floor(diffMs / hourMs)}h ago`;
+  return `${Math.floor(diffMs / dayMs)}d ago`;
+};
+
 const normalizeScore = (score) => {
   if (score === null || score === undefined) return null;
   return score <= 1 ? Math.round(score * 100) : Math.round(score);
@@ -191,7 +225,8 @@ const computeKpis = (items) => {
   const total_runs = safeItems.length;
   const pass_rate_percent = total_runs > 0 ? Math.round((pass_count / total_runs) * 100) : 0;
   const avg_score = scoreCount > 0 ? Math.round(scoreSum / scoreCount) : 0;
-  const last_run_at = lastRunTs ? new Date(lastRunTs).toISOString() : '—';
+  const last_run_at = lastRunTs ? formatRunDateTime(lastRunTs) : '—';
+  const last_run_subtext = lastRunTs ? formatTimeAgo(lastRunTs, now) : null;
 
   return {
     total_runs,
@@ -203,6 +238,7 @@ const computeKpis = (items) => {
     runs_last_7_days,
     credits_spent_total,
     last_run_at,
+    last_run_subtext,
   };
 };
 
@@ -614,7 +650,9 @@ export default function DashboardPage() {
               icon={History}
               label="Last Run At"
               value={kpis.last_run_at}
+              subtext={kpis.last_run_subtext}
               color={kpis.last_run_at === '—' ? 'muted' : 'default'}
+              valueClassName="whitespace-nowrap tabular-nums overflow-hidden text-ellipsis"
             />
           </div>
 
