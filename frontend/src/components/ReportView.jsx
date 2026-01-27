@@ -18,12 +18,25 @@ import {
   Baby,
   Pill,
   Moon,
-  Circle,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { getSeverityColor } from '../lib/checkDefinitions';
-import { HALAL_CHECK_DEFINITIONS } from '../lib/halalChecks';
 import { normalizeReport } from '../lib/reportViewModel';
 import { formatVerdictLabel, normalizeVerdict } from '../utils/verdict';
+import { runAPI } from '../lib/api';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog';
 
 const cardBase = 'bg-white/[0.035] border border-white/[0.06] rounded-2xl p-6 shadow-[0_18px_40px_rgba(0,0,0,0.35)]';
 const cardInset = 'bg-[#0B1020]/70 rounded-xl p-4';
@@ -64,37 +77,6 @@ const FindingCard = ({ title, severity, source, fix, safeString }) => {
   );
 };
 
-// Halal Check Card - matches sample layout
-const HalalCheckCard = ({ check, safeString }) => {
-  const colors = getSeverityColor(check.severity || check.status);
-  const StatusIcon = check.status === 'critical'
-    ? XCircle
-    : check.status === 'warning'
-      ? AlertTriangle
-      : check.status === 'pass'
-        ? CheckCircle
-        : Circle;
-
-  return (
-    <div className={cardBase}>
-      <div className="flex items-start gap-3">
-        <StatusIcon className={`h-5 w-5 mt-0.5 ${colors.text} flex-shrink-0`} />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center flex-wrap gap-2 mb-2">
-            <span className="text-white/90 text-base font-semibold">{safeString(check.title, 'Untitled check')}</span>
-            <SeverityBadge level={check.severity || check.status} />
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-[#7F8CFF] bg-[#5B6CFF]/10 px-2 py-0.5 rounded-full border border-[#5B6CFF]/30">
-              {safeString(check.source, 'N/A')}
-            </span>
-          </div>
-          <p className="text-white/55 text-sm mb-1 leading-relaxed">{safeString(check.detail, '')}</p>
-          <p className="text-white/40 text-xs">Fix: {safeString(check.fix, '')}</p>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 // Category Chip
 const CategoryChip = ({ icon: Icon, label, active }) => (
   <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm ${active ? 'bg-[#5B6CFF]/15 border-[#5B6CFF]/40 text-[#5B6CFF]' : 'bg-white/[0.03] border-white/[0.08] text-white/60'}`}>
@@ -119,7 +101,18 @@ const VerdictBadge = ({ verdict }) => {
   );
 };
 
-export default function ReportView({ report, reportView, runIdFallback }) {
+export default function ReportView({ report, reportView, runIdFallback, onRefreshReportView }) {
+  const [activeEvidence, setActiveEvidence] = React.useState({});
+  const [activeItem, setActiveItem] = React.useState(null);
+  const [formValues, setFormValues] = React.useState({
+    cert_issuer: '',
+    cert_ref: '',
+    cert_expiry: '',
+    notes: '',
+  });
+  const [formError, setFormError] = React.useState(null);
+  const [formLoading, setFormLoading] = React.useState(false);
+
   if (!report && !reportView) return null;
 
   const safeString = (value, fallback = '—') => {
@@ -163,6 +156,7 @@ export default function ReportView({ report, reportView, runIdFallback }) {
   const evidenceConfidence = safeNumber(kpiBlock.evidence_confidence ?? view.summary?.evidence_confidence, 0);
   const verdict = normalizeVerdict(safeString(view.summary?.verdict, 'NEEDS_REVIEW'));
   const runIdDisplay = safeString(view.meta?.run_id, runIdFallback || 'Unknown');
+  const runIdForApi = view.meta?.run_id || runIdFallback;
   const generatedAt = view.meta?.created_at ? new Date(view.meta.created_at) : null;
   const generatedAtLabel = generatedAt && !Number.isNaN(generatedAt.getTime())
     ? generatedAt.toLocaleString()
@@ -185,23 +179,69 @@ export default function ReportView({ report, reportView, runIdFallback }) {
   const evidenceFindings = findings.filter((f) => f.status === 'critical').length
     ? findings.filter((f) => f.status === 'critical')
     : findings.filter((f) => f.status === 'warning');
-  const halalCertificateCheck = halalChecks.find((c) => c.id === 'halal_certificate_provided');
-  const halalInputs = halalEnabled
-    ? [
-        { label: 'Supplier TDS', tone: 'success' },
-        {
-          label:
-            halalCertificateCheck?.status === 'pass'
-              ? 'Halal Certificate'
-              : 'Halal Certificate (not provided)',
-          tone: halalCertificateCheck?.status === 'pass' ? 'success' : 'warning',
-        },
-        {
-          label: `Target Market: ${safeString(product.country_of_sale, 'N/A')}`,
-          tone: 'neutral',
-        },
-      ]
-    : [];
+  const halalVerdict = String(view.meta?.halal_verdict || '').toUpperCase();
+  const hasHalalSection = halalEnabled && !!sectionMap.halal;
+  const normalizeSeverity = (value) => {
+    const v = String(value || '').toLowerCase();
+    if (v === 'high') return 'critical';
+    if (v === 'medium') return 'warning';
+    if (v === 'low') return 'pass';
+    if (v === 'pass' || v === 'warning' || v === 'critical') return v;
+    return v || 'warning';
+  };
+
+  const normalizeDecision = (value) => String(value || '').toLowerCase();
+
+  const truncateText = (value, max = 140) => {
+    const text = safeString(value, '');
+    if (!text) return '';
+    return text.length > max ? `${text.slice(0, max)}...` : text;
+  };
+
+  const handleOpenModal = (item) => {
+    setActiveItem(item);
+    setFormValues({
+      cert_issuer: safeString(item.cert_issuer, ''),
+      cert_ref: safeString(item.cert_ref, ''),
+      cert_expiry: safeString(item.cert_expiry, ''),
+      notes: safeString(item.notes, ''),
+    });
+    setFormError(null);
+  };
+
+  const handleSubmitDocument = async () => {
+    if (!activeItem) return;
+    if (!formValues.cert_issuer.trim()) {
+      setFormError('Issued by is required.');
+      return;
+    }
+    setFormLoading(true);
+    setFormError(null);
+    try {
+      // Backend fields are cert_issuer/cert_ref/cert_expiry/notes; UI intentionally uses human labels.
+      await runAPI.halalBulkAttest(runIdForApi, {
+        items: [
+          {
+            ingredient_key: activeItem.id,
+            decision: 'provided',
+            cert_issuer: formValues.cert_issuer.trim(),
+            cert_ref: formValues.cert_ref.trim() || undefined,
+            cert_expiry: formValues.cert_expiry.trim() || undefined,
+            notes: formValues.notes.trim() || undefined,
+          },
+        ],
+      });
+      if (typeof onRefreshReportView === 'function') {
+        await onRefreshReportView();
+      }
+      setActiveItem(null);
+    } catch (error) {
+      const message = error?.response?.data?.error || error?.message || 'Failed to save document.';
+      setFormError(message);
+    } finally {
+      setFormLoading(false);
+    }
+  };
 
   return (
     <>
@@ -514,73 +554,149 @@ export default function ReportView({ report, reportView, runIdFallback }) {
             </div>
           </div>
 
-          {halalEnabled && (
+          {hasHalalSection && (
             <div className="p-7 sm:p-8 border-b border-white/[0.06]" id="halal-preflight">
               <div className="flex items-center gap-2 mb-6">
                 <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-[11px] font-semibold uppercase tracking-wide rounded-full border border-emerald-500/30">
                   Optional Module
                 </span>
-                <span className="text-white/50 text-sm">Halal Export-Readiness Preflight</span>
+                <span className="text-white/50 text-sm">Optional Halal Export Readiness</span>
               </div>
 
-              <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 mb-6">
+              <div className={`rounded-xl p-4 mb-6 border ${halalVerdict === 'READY' ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-amber-500/10 border-amber-500/30'}`}>
                 <div className="flex items-center justify-between">
-                  <span className="text-emerald-400 font-medium">Module Status</span>
-                  <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs rounded border border-emerald-500/30">
-                    Active
+                  <span className={`${halalVerdict === 'READY' ? 'text-emerald-400' : 'text-amber-400'} font-medium`}>
+                    {halalVerdict === 'READY'
+                      ? 'READY — supplier documents provided for all flagged ingredients'
+                      : 'NEEDS REVIEW — supplier documents required for flagged ingredients'}
                   </span>
                 </div>
               </div>
 
-              <div className={`${cardBase} mb-6`}>
-                <h4 className="text-white/90 text-base font-semibold mb-4">Inputs Provided</h4>
-                <div className="flex flex-wrap gap-3">
-                  {halalInputs.map((item) => (
-                    <span
-                      key={item.label}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm ${
-                        item.tone === 'success'
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                          : item.tone === 'warning'
-                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                            : 'bg-white/[0.04] text-white/60 border-white/[0.08]'
-                      }`}
-                    >
-                      {item.tone === 'success' ? (
-                        <CheckCircle className="h-3.5 w-3.5" />
-                      ) : item.tone === 'warning' ? (
-                        <AlertTriangle className="h-3.5 w-3.5" />
-                      ) : (
-                        <Circle className="h-3.5 w-3.5" />
-                      )}
-                      {item.label}
-                    </span>
-                  ))}
+              {halalVerdict !== 'READY' && (
+                <div className="bg-white/[0.03] border border-white/[0.08] rounded-xl p-4 mb-6">
+                  <div className="text-white/80 font-semibold mb-2">What you need to do</div>
+                  <ol className="list-decimal list-inside space-y-1 text-white/60 text-sm">
+                    <li>Contact your supplier</li>
+                    <li>Request a Halal certificate or supplier statement for the flagged ingredient</li>
+                    <li>Enter the document details below (issuer, reference, expiry)</li>
+                  </ol>
                 </div>
-              </div>
+              )}
 
-              <div className="space-y-3 mb-6">
-                <h4 className="text-white/90 text-base font-semibold">
-                  Halal Preflight Checks ({halalChecks.length || HALAL_CHECK_DEFINITIONS.length})
-                </h4>
-                {halalChecks.length > 0 ? (
-                  halalChecks.map((check) => (
-                    <HalalCheckCard key={check.id} check={check} safeString={safeString} />
-                  ))
-                ) : (
-                  HALAL_CHECK_DEFINITIONS.map((check) => (
-                    <HalalCheckCard
-                      key={check.id}
-                      check={{
-                        ...check,
-                        status: 'not_evaluated',
-                        severity: check.defaultSeverity,
-                        detail: check.detailMissing,
-                      }}
-                      safeString={safeString}
-                    />
-                  ))
-                )}
+              <div className="space-y-4 mb-6">
+                {halalChecks.map((item) => {
+                  const severity = normalizeSeverity(item.severity ?? item.status);
+                  const colors = getSeverityColor(severity);
+                  const decision = normalizeDecision(item.decision);
+                  const evidenceList = Array.isArray(item.evidence) ? item.evidence : [];
+                  const previewText = evidenceList[0]?.excerpt || evidenceList[0]?.snippet || '';
+                  const showEvidence = !!activeEvidence[item.id];
+                  const isActionRequired = decision !== 'provided' || severity === 'critical';
+                  const statusLabel = severity === 'critical'
+                    ? 'Action Required'
+                    : severity === 'warning'
+                      ? 'Needs Review'
+                      : severity === 'pass'
+                        ? 'Provided'
+                        : 'Info';
+
+                  return (
+                    <div key={item.id} className={cardBase}>
+                      <div className="flex items-start gap-3">
+                        {severity === 'critical' ? (
+                          <XCircle className={`h-5 w-5 mt-0.5 ${colors.text} flex-shrink-0`} />
+                        ) : severity === 'warning' ? (
+                          <AlertTriangle className={`h-5 w-5 mt-0.5 ${colors.text} flex-shrink-0`} />
+                        ) : (
+                          <CheckCircle className={`h-5 w-5 mt-0.5 ${colors.text} flex-shrink-0`} />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center flex-wrap gap-2 mb-2">
+                            <span className="text-white/90 text-base font-semibold">{safeString(item.title, 'Untitled item')}</span>
+                            <span className={`px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide rounded-full border ${colors.bg} ${colors.text} ${colors.border}`}>
+                              {statusLabel}
+                            </span>
+                            <span className="text-[11px] font-semibold uppercase tracking-wide text-[#7F8CFF] bg-[#5B6CFF]/10 px-2 py-0.5 rounded-full border border-[#5B6CFF]/30">
+                              {safeString(item.source, 'N/A')}
+                            </span>
+                          </div>
+                          <p className="text-white/60 text-sm mb-3">
+                            <span className="text-white/70 font-medium">Why this is flagged:</span>{' '}
+                            {safeString(item.detail, '')}
+                          </p>
+
+                          <div className={`${cardInset} mb-3`}>
+                            <div className="text-xs text-white/40 uppercase tracking-[0.2em] mb-2">Evidence (excerpt)</div>
+                            {previewText ? (
+                              <p className="text-white/70 text-sm italic">"{truncateText(previewText, 140)}"</p>
+                            ) : (
+                              <p className="text-white/50 text-sm">No evidence excerpt available.</p>
+                            )}
+                            {evidenceList.length > 1 && (
+                              <button
+                                type="button"
+                                className="mt-2 text-xs text-[#7F8CFF] hover:text-[#9AA7FF] inline-flex items-center gap-1"
+                                onClick={() => setActiveEvidence((prev) => ({ ...prev, [item.id]: !prev[item.id] }))}
+                              >
+                                {showEvidence ? 'Hide evidence' : 'Show evidence'}
+                                {showEvidence ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                              </button>
+                            )}
+                            {showEvidence && (
+                              <div className="mt-3 space-y-3">
+                                {evidenceList.map((entry, idx) => (
+                                  <div key={`${item.id}-evidence-${idx}`}>
+                                    <p className="text-white/70 text-sm italic">"{safeString(entry.excerpt || entry.snippet, '')}"</p>
+                                    <p className="text-white/40 text-xs mt-1">
+                                      ↳ {safeString(entry.source, 'Source')}
+                                      {entry.page ? ` · Page ${entry.page}` : ''}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {decision === 'provided' ? (
+                            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4">
+                              <div className="text-emerald-400 font-medium mb-2">Document provided</div>
+                              <div className="grid sm:grid-cols-2 gap-3 text-sm text-white/70">
+                                <div>
+                                  <div className="text-white/40 text-xs">Issued by (supplier / certifier)</div>
+                                  <div>{safeString(item.cert_issuer, '—')}</div>
+                                </div>
+                                <div>
+                                  <div className="text-white/40 text-xs">Document reference (ID / number)</div>
+                                  <div>{safeString(item.cert_ref, '—')}</div>
+                                </div>
+                                <div>
+                                  <div className="text-white/40 text-xs">Expiry date (if available)</div>
+                                  <div>{safeString(item.cert_expiry, '—')}</div>
+                                </div>
+                                <div>
+                                  <div className="text-white/40 text-xs">Notes</div>
+                                  <div>{safeString(item.notes, '—')}</div>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between gap-4">
+                              <div className="text-white/60 text-sm">
+                                <span className="text-amber-400 font-medium">Action required:</span> add supplier document
+                              </div>
+                              {isActionRequired && (
+                                <Button onClick={() => handleOpenModal(item)} className="bg-[#5B6CFF] hover:bg-[#6E7BFF]">
+                                  Add supplier document
+                                </Button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4">
@@ -642,6 +758,71 @@ export default function ReportView({ report, reportView, runIdFallback }) {
           </div>
         </div>
       </motion.div>
+
+      {/* Backend fields are cert_issuer/cert_ref/cert_expiry/notes; UI intentionally uses human labels. */}
+      <Dialog open={!!activeItem} onOpenChange={(open) => !open && setActiveItem(null)}>
+        <DialogContent className="bg-[#0f1219] border-white/[0.12] text-white">
+          <DialogHeader>
+            <DialogTitle>
+              Supplier document needed: {safeString(activeItem?.title, '')}
+            </DialogTitle>
+            <DialogDescription className="text-white/60">
+              To mark this ingredient as export-ready, enter the supplier/certifier document details.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-white/70">Issued by (supplier / certifier)</Label>
+              <Input
+                value={formValues.cert_issuer}
+                onChange={(e) => setFormValues((prev) => ({ ...prev, cert_issuer: e.target.value }))}
+                placeholder="e.g., ACME Halal / Supplier Name"
+                className="bg-white/[0.03] border-white/[0.12] text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-white/70">Document reference (ID / number)</Label>
+              <Input
+                value={formValues.cert_ref}
+                onChange={(e) => setFormValues((prev) => ({ ...prev, cert_ref: e.target.value }))}
+                placeholder="e.g., H-5678"
+                className="bg-white/[0.03] border-white/[0.12] text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-white/70">Expiry date (if available)</Label>
+              <Input
+                value={formValues.cert_expiry}
+                onChange={(e) => setFormValues((prev) => ({ ...prev, cert_expiry: e.target.value }))}
+                placeholder="YYYY-MM-DD"
+                className="bg-white/[0.03] border-white/[0.12] text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-white/70">Notes (optional)</Label>
+              <Textarea
+                value={formValues.notes}
+                onChange={(e) => setFormValues((prev) => ({ ...prev, notes: e.target.value }))}
+                placeholder="Notes"
+                className="bg-white/[0.03] border-white/[0.12] text-white min-h-[90px]"
+              />
+            </div>
+            {formError && (
+              <div className="text-rose-300 text-sm">{formError}</div>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="secondary" onClick={() => setActiveItem(null)} disabled={formLoading}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmitDocument} disabled={formLoading}>
+              {formLoading ? 'Saving...' : 'Save document'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -82,6 +82,19 @@ export default function ReportPage() {
   // Toast notification state
   const [toast, setToast] = useState(null);
 
+  const refreshReportView = async () => {
+    if (!runId) return;
+    try {
+      const viewData = await runAPI.getReportView(runId);
+      setReportView(viewData);
+    } catch (viewError) {
+      if (viewError?.response?.status !== 404) {
+        console.warn('Report view not available:', viewError);
+      }
+      setReportView(null);
+    }
+  };
+
   const handleSwitchAccount = () => {
     logout();
     navigate('/signin');
@@ -179,11 +192,11 @@ export default function ReportPage() {
       await runAPI.submitCorrections(runId, correctionsText.trim(), overrideFieldsJson);
       
       // Immediately refetch report.json to get updated data with new correction
-      const updatedReport = await runAPI.getReport(runId);
-      setRun(updatedReport);
-      try {
-        const updatedView = await runAPI.getReportView(runId);
-        setReportView(updatedView);
+        const updatedReport = await runAPI.getReport(runId);
+        setRun(updatedReport);
+        try {
+          const updatedView = await runAPI.getReportView(runId);
+          setReportView(updatedView);
       } catch (viewError) {
         if (viewError?.response?.status !== 404) {
           console.warn('Report view not available:', viewError);
@@ -351,7 +364,12 @@ export default function ReportPage() {
       {/* Content */}
       <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="max-w-5xl mx-auto">
-          <ReportView report={run} reportView={reportView} runIdFallback={runId} />
+          <ReportView
+            report={run}
+            reportView={reportView}
+            runIdFallback={runId}
+            onRefreshReportView={refreshReportView}
+          />
 
           {/* Action Buttons */}
           <motion.div
