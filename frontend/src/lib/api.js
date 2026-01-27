@@ -109,6 +109,12 @@ export const runAPI = {
     const response = await api.get(`/api/runs/${runId}/report_view.json`);
     return response.data;
   },
+
+  // POST /api/runs/:run_id/halal/attestations/bulk
+  halalBulkAttest: async (runId, payload) => {
+    const response = await api.post(`/api/runs/${runId}/halal/attestations/bulk`, payload);
+    return response.data;
+  },
   
   // POST /api/runs/:run_id/corrections
   submitCorrections: async (runId, correctionsText, overrideFieldsJson = '{}') => {
